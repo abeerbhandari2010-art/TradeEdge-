@@ -1,0 +1,3767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeEdge — Intraday Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a0e;
+    --bg2: #0a1018;
+    --bg3: #0f1820;
+    --card: #0d1822;
+    --border: #1a2d3f;
+    --accent: #00d4ff;
+    --accent2: #00ff88;
+    --accent3: #ff6b35;
+    --warn: #ffcc00;
+    --red: #ff3b5c;
+    --text: #e8f4fd;
+    --muted: #5a7a8a;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --display: 'Bebas Neue', sans-serif;
+  }
+
+  /* ===== LOGIN OVERLAY ===== */
+  #loginOverlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%;
+    z-index: 99999;
+    background: #050a0e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--sans);
+  }
+  #loginOverlay * { pointer-events: auto; }
+
+  .login-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: min(900px, 94vw);
+    min-height: 540px;
+    border: 1px solid #1a2d3f;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.7);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* background grid pattern */
+  #loginOverlay::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* glow orbs — purely decorative, never intercept */
+  #loginOverlay::after {
+    content: '';
+    position: fixed;
+    top: -150px; right: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(0,212,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: 0;
+    animation: orbFloat 8s ease-in-out infinite;
+  }
+
+  @keyframes orbFloat {
+    0%,100% { transform: translate(0,0); }
+    50% { transform: translate(20px,-30px); }
+  }
+
+  /* LEFT BRAND PANEL */
+  .login-brand {
+    background: linear-gradient(135deg, #080f18, #0d1c2e);
+    border-right: 1px solid #1a2d3f;
+    padding: 52px 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+  }
+
+  .brand-logo {
+    font-family: var(--display);
+    font-size: 34px;
+    letter-spacing: 0.08em;
+    color: #00d4ff;
+  }
+  .brand-logo span { color: #00ff88; }
+  .brand-tagline {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #5a7a8a;
+    margin-top: 5px;
+  }
+
+  .brand-features { list-style: none; display: flex; flex-direction: column; gap: 20px; }
+  .brand-features li { display: flex; align-items: flex-start; gap: 14px; }
+  .feat-icon {
+    width: 36px; height: 36px; flex-shrink: 0;
+    background: rgba(0,212,255,0.07);
+    border: 1px solid rgba(0,212,255,0.15);
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .feat-text strong { display: block; font-size: 13px; color: #e8f4fd; margin-bottom: 2px; }
+  .feat-text span { font-size: 11px; color: #5a7a8a; line-height: 1.5; }
+  .brand-footer { font-family: var(--mono); font-size: 10px; color: #2a4a5a; letter-spacing: 0.1em; }
+
+  /* RIGHT FORM PANEL */
+  .login-form-panel {
+    background: #0a1018;
+    padding: 52px 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .login-step { display: none; }
+  .login-step.active { display: block; }
+
+  .step-eyebrow {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: #00d4ff;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
+  }
+  .step-eyebrow::before { content: ''; width: 22px; height: 1px; background: #00d4ff; display: inline-block; }
+
+  .step-title {
+    font-family: var(--display); font-size: 38px;
+    letter-spacing: 0.04em; color: #e8f4fd;
+    line-height: 1; margin-bottom: 8px;
+  }
+  .step-sub { font-size: 13px; color: #5a7a8a; line-height: 1.6; margin-bottom: 32px; }
+  .step-sub strong { color: #00d4ff; }
+
+  .l-form-group { margin-bottom: 20px; }
+  .l-form-label {
+    display: block; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: #5a7a8a; margin-bottom: 10px;
+  }
+
+  .phone-input-wrap {
+    display: flex; border: 1px solid #1a2d3f; background: #0f1820;
+    transition: border-color 0.2s;
+  }
+  .phone-input-wrap:focus-within { border-color: #00d4ff; }
+  .phone-prefix {
+    display: flex; align-items: center; padding: 0 14px;
+    font-family: var(--mono); font-size: 14px; color: #5a7a8a;
+    background: rgba(0,212,255,0.04); border-right: 1px solid #1a2d3f; gap: 6px;
+  }
+  .l-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: #e8f4fd; font-family: var(--mono); font-size: 18px;
+    letter-spacing: 0.06em; padding: 14px;
+  }
+  .l-input::placeholder { color: #2a4a5a; font-size: 14px; }
+
+  /* OTP boxes */
+  .otp-boxes { display: flex; gap: 10px; margin-bottom: 8px; }
+  .otp-box {
+    width: 50px; height: 58px;
+    background: #0f1820; border: 1px solid #1a2d3f;
+    color: #e8f4fd; font-family: var(--display); font-size: 26px;
+    text-align: center; outline: none; transition: all 0.2s;
+  }
+  .otp-box:focus { border-color: #00d4ff; background: rgba(0,212,255,0.05); }
+  .otp-box.filled { border-color: rgba(0,212,255,0.5); color: #00d4ff; }
+  .otp-box.error-box { border-color: #ff3b5c !important; animation: shake 0.4s ease; }
+  .otp-box.success-box { border-color: #00ff88 !important; color: #00ff88; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); }
+  }
+  .otp-hint { font-family: var(--mono); font-size: 10px; color: #5a7a8a; margin-top: 6px; letter-spacing: 0.08em; }
+
+  /* THE BUTTON */
+  .l-btn {
+    display: block;
+    width: 100%;
+    font-family: var(--display); font-size: 20px; letter-spacing: 0.1em;
+    background: #00d4ff; color: #050a0e;
+    border: none; padding: 16px 0;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .l-btn:hover { background: #33ddff; transform: translateY(-1px); }
+  .l-btn:disabled { background: #1a2d3f; color: #5a7a8a; cursor: not-allowed; transform: none; }
+
+  .l-error {
+    font-family: var(--mono); font-size: 11px; color: #ff3b5c;
+    background: rgba(255,59,92,0.08); border: 1px solid rgba(255,59,92,0.2);
+    padding: 9px 13px; margin-top: 10px; display: none;
+  }
+  .l-error.show { display: block; }
+  .l-success-msg {
+    font-family: var(--mono); font-size: 11px; color: #00ff88;
+    background: rgba(0,255,136,0.07); border: 1px solid rgba(0,255,136,0.2);
+    padding: 9px 13px; margin-top: 10px; display: none;
+  }
+  .l-success-msg.show { display: block; }
+
+  .resend-row { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .resend-btn {
+    background: none; border: none; font-family: var(--mono);
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #5a7a8a; cursor: pointer; padding: 0; transition: color 0.2s;
+  }
+  .resend-btn:hover:not(:disabled) { color: #00d4ff; }
+  .resend-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .resend-timer { font-family: var(--mono); font-size: 11px; color: #5a7a8a; }
+
+  .change-number {
+    background: none; border: none; font-family: var(--mono);
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #5a7a8a; cursor: pointer; padding: 0; margin-bottom: 24px;
+    display: block; transition: color 0.2s;
+  }
+  .change-number:hover { color: #00d4ff; }
+
+  /* Success flash */
+  .login-success-flash {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 100000; background: #050a0e;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+  }
+  .success-ring {
+    width: 80px; height: 80px; border: 2px solid #00ff88; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 36px;
+    box-shadow: 0 0 40px rgba(0,255,136,0.3);
+    animation: ringPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes ringPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .success-text { font-family: var(--display); font-size: 32px; letter-spacing: 0.1em; color: #00ff88; }
+  .success-sub { font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a7a8a; }
+
+  @media (max-width: 680px) {
+    .login-grid { grid-template-columns: 1fr; }
+    .login-brand { display: none; }
+    .login-form-panel { padding: 40px 28px; }
+    .otp-box { width: 42px; height: 52px; font-size: 22px; }
+  }
+  /* ===== END LOGIN ===== */
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── INDICES MARQUEE BAR ── */
+  .indices-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(5,10,14,0.97);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(14px);
+    display: flex;
+    align-items: stretch;
+    height: 38px;
+    overflow: hidden;
+  }
+
+  .indices-bar-label {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    background: rgba(0,212,255,0.07);
+    border-right: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .indices-bar-label .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes dotPulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .indices-scroll-wrap {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  /* fade edges */
+  .indices-scroll-wrap::before,
+  .indices-scroll-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 48px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .indices-scroll-wrap::before { left: 0; background: linear-gradient(90deg, rgba(5,10,14,0.97), transparent); }
+  .indices-scroll-wrap::after  { right: 0; background: linear-gradient(-90deg, rgba(5,10,14,0.97), transparent); }
+
+  .indices-track {
+    display: flex;
+    gap: 0;
+    white-space: nowrap;
+    will-change: transform;
+    animation: indicesScroll 40s linear infinite;
+  }
+
+  /* pause scroll on hover */
+  .indices-scroll-wrap:hover .indices-track {
+    animation-play-state: paused;
+  }
+
+  @keyframes indicesScroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .idx-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    /* fixed width so no reflow when numbers change */
+    width: 260px;
+    flex-shrink: 0;
+    flex-grow: 0;
+    padding: 0 18px;
+    border-right: 1px solid rgba(26,45,63,0.6);
+    height: 38px;
+    cursor: default;
+    transition: background 0.2s;
+    overflow: hidden;
+  }
+
+  .idx-chip:hover { background: rgba(0,212,255,0.04); }
+
+  .idx-sym {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    /* fixed width so label never shifts neighbours */
+    min-width: 96px;
+    max-width: 96px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .idx-price {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    /* tabular nums so digits swap without shifting */
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    min-width: 72px;
+    max-width: 72px;
+    white-space: nowrap;
+  }
+
+  .idx-chg {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    padding: 2px 0;
+    /* fixed width badge — change value never shifts chip width */
+    min-width: 54px;
+    max-width: 54px;
+    text-align: center;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .idx-chg.up  { color: var(--accent2); }
+  .idx-chg.dn  { color: var(--red);     }
+  .idx-chg.neu { color: var(--muted);   }
+
+  /* edit button inside bar */
+  .indices-edit-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    background: none;
+    border: none;
+    border-left: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .indices-edit-btn:hover { color: var(--accent); background: rgba(0,212,255,0.05); }
+
+  /* ── EDIT MODAL ── */
+  .idx-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    background: rgba(5,10,14,0.88);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .idx-modal-overlay.open { display: flex; animation: mFadeIn 0.25s ease; }
+
+  @keyframes mFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .idx-modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    width: min(560px, 96vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: mSlideUp 0.3s cubic-bezier(0.34,1.2,0.64,1);
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  }
+
+  @keyframes mSlideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .idx-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .idx-modal-title {
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    color: var(--text);
+  }
+
+  .idx-modal-close {
+    width: 32px; height: 32px;
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); font-size: 16px;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .idx-modal-close:hover { border-color: var(--red); color: var(--red); }
+
+  .idx-modal-body { padding: 24px 28px; }
+
+  .idx-modal-info {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    background: rgba(0,212,255,0.05);
+    border: 1px solid rgba(0,212,255,0.12);
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    line-height: 1.7;
+  }
+
+  .idx-symbol-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .idx-symbol-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+
+  .idx-symbol-row:hover { border-color: rgba(0,212,255,0.2); }
+
+  .idx-drag-handle {
+    color: var(--muted);
+    font-size: 14px;
+    cursor: grab;
+    user-select: none;
+    padding: 0 4px;
+  }
+
+  .idx-sym-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .idx-sym-input::placeholder { color: var(--muted); text-transform: none; }
+
+  .idx-sym-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 2px 7px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .idx-remove-btn {
+    width: 26px; height: 26px;
+    background: none; border: 1px solid transparent;
+    color: var(--muted); font-size: 14px;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    border-radius: 2px;
+  }
+
+  .idx-remove-btn:hover { border-color: var(--red); color: var(--red); }
+
+  .idx-add-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .idx-add-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .idx-add-input:focus { border-color: var(--accent); }
+  .idx-add-input::placeholder { color: var(--muted); text-transform: none; }
+
+  .idx-add-btn {
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .idx-add-btn:hover { background: rgba(0,212,255,0.18); }
+  .idx-add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .idx-limit-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .idx-modal-footer {
+    display: flex;
+    gap: 10px;
+    padding: 20px 28px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .idx-save-btn {
+    flex: 1;
+    font-family: var(--display);
+    font-size: 18px;
+    letter-spacing: 0.1em;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .idx-save-btn:hover { background: #33ddff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,255,0.3); }
+
+  .idx-reset-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .idx-reset-btn:hover { border-color: var(--muted); color: var(--text); }
+
+  /* preset chips */
+  .idx-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .idx-preset-chip {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 5px 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .idx-preset-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .idx-preset-chip.added { border-color: var(--accent2); color: var(--accent2); background: rgba(0,255,136,0.06); cursor: default; }
+
+  /* ── OLD STATS ROW → now below hero as scrolling section ── */
+  .stats-row {
+    display: none; /* replaced by indices bar */
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 33px; left: 0; right: 0;
+    z-index: 99;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 40px;
+    background: rgba(5,10,14,0.9);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-size: 26px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.4);
+  }
+
+  .logo span { color: var(--accent2); }
+
+  nav ul {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  nav ul a {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  nav ul a:hover { color: var(--accent); }
+
+  .nav-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent);
+    padding: 4px 10px;
+    letter-spacing: 0.1em;
+  }
+
+  /* MAIN */
+  main { padding-top: 110px; position: relative; z-index: 1; }
+
+  /* HERO */
+  .hero {
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hero-label::before {
+    content: '';
+    display: inline-block;
+    width: 32px; height: 1px;
+    background: var(--accent);
+  }
+
+  .hero h1 {
+    font-family: var(--display);
+    font-size: clamp(64px, 10vw, 130px);
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    margin-bottom: 32px;
+  }
+
+  .hero h1 .hl {
+    color: var(--accent);
+    text-shadow: 0 0 40px rgba(0,212,255,0.3);
+  }
+
+  .hero h1 .hl2 {
+    color: var(--accent2);
+    text-shadow: 0 0 40px rgba(0,255,136,0.3);
+  }
+
+  .hero-sub {
+    max-width: 560px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--muted);
+    margin-bottom: 48px;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 14px 32px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    font-weight: 500;
+  }
+
+  .btn-primary:hover {
+    background: #33ddff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,212,255,0.3);
+  }
+
+  .btn-outline {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--text);
+    padding: 14px 32px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-outline:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    margin: 0 60px;
+  }
+
+  .stat-card {
+    flex: 1;
+    background: var(--bg2);
+    padding: 28px 32px;
+    border-top: 2px solid transparent;
+    transition: border-color 0.3s;
+  }
+
+  .stat-card:hover { border-top-color: var(--accent); }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .stat-val {
+    font-family: var(--display);
+    font-size: 36px;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+
+  .stat-val.green { color: var(--accent2); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.cyan { color: var(--accent); }
+
+  /* SECTION WRAPPER */
+  section {
+    padding: 80px 60px;
+    position: relative;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 48px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .section-title {
+    font-family: var(--display);
+    font-size: 48px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  /* EDUCATION TABS */
+  #learn { background: var(--bg2); }
+
+  .tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 14px 24px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-content { display: none; animation: fadeIn 0.3s ease; }
+  .tab-content.active { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .learn-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .learn-card:hover { border-color: rgba(0,212,255,0.3); }
+
+  .learn-card::before {
+    content: attr(data-num);
+    position: absolute;
+    top: -10px; right: 20px;
+    font-family: var(--display);
+    font-size: 80px;
+    color: rgba(0,212,255,0.04);
+    pointer-events: none;
+  }
+
+  .learn-card h3 {
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .learn-card p {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+
+  .learn-card .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    margin-top: 16px;
+    margin-right: 6px;
+  }
+
+  .tag.risk { background: rgba(255,59,92,0.1); color: var(--red); border: 1px solid rgba(255,59,92,0.2); }
+  .tag.strategy { background: rgba(0,255,136,0.1); color: var(--accent2); border: 1px solid rgba(0,255,136,0.2); }
+  .tag.beginner { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+  .tag.advanced { background: rgba(255,107,53,0.1); color: var(--accent3); border: 1px solid rgba(255,107,53,0.2); }
+
+  /* MARKET OVERVIEW */
+  #market { background: var(--bg); }
+
+  .market-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .market-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 24px;
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .market-card:hover {
+    border-color: rgba(0,212,255,0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  .market-card .index-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .market-card .index-val {
+    font-family: var(--display);
+    font-size: 34px;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+
+  .market-card .index-chg {
+    font-family: var(--mono);
+    font-size: 12px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .chg-up { color: var(--accent2); }
+  .chg-dn { color: var(--red); }
+
+  .sparkline {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 80px; height: 40px;
+    opacity: 0.4;
+  }
+
+  /* DISCLAIMER */
+  .disclaimer {
+    background: rgba(255,204,0,0.05);
+    border: 1px solid rgba(255,204,0,0.2);
+    border-left: 3px solid var(--warn);
+    padding: 20px 24px;
+    margin-top: 28px;
+  }
+
+  .disclaimer-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--warn);
+    margin-bottom: 8px;
+  }
+
+  .disclaimer p {
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(255,204,0,0.6);
+  }
+
+  /* CONCEPTS SECTION */
+  #concepts { background: var(--bg); }
+
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .concept-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .concept-card:hover {
+    border-color: rgba(0,212,255,0.3);
+    transform: translateY(-4px);
+  }
+
+  .concept-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .concept-card h3 {
+    font-family: var(--display);
+    font-size: 20px;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .concept-card p {
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 32px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-logo {
+    font-family: var(--display);
+    font-size: 20px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+
+  .footer-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    max-width: 400px;
+    line-height: 1.8;
+    text-align: center;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* RESPONSIVE */
+  @media (max-width: 1024px) {
+    .market-grid { grid-template-columns: repeat(2, 1fr); }
+    .concepts-grid { grid-template-columns: repeat(2, 1fr); }
+    .tab-content.active { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    section, .hero { padding: 60px 24px; }
+    .stats-row { margin: 0 24px; flex-wrap: wrap; }
+    nav { padding: 14px 24px; }
+    nav ul { display: none; }
+    .market-grid { grid-template-columns: 1fr; }
+    .concepts-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 16px; text-align: center; }
+  }
+
+  /* ── AUTOCOMPLETE DROPDOWN ── */
+  .idx-autocomplete-wrap {
+    position: relative;
+    flex: 1;
+  }
+  .idx-autocomplete-wrap .idx-add-input {
+    width: 100%;
+  }
+  .idx-autocomplete-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    z-index: 9999;
+    max-height: 220px;
+    overflow-y: auto;
+    display: none;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .idx-autocomplete-list.open { display: block; animation: mFadeIn 0.15s ease; }
+  .idx-ac-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(26,45,63,0.5);
+    transition: background 0.15s;
+  }
+  .idx-ac-item:last-child { border-bottom: none; }
+  .idx-ac-item:hover, .idx-ac-item.active { background: rgba(0,212,255,0.07); }
+  .idx-ac-sym {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    min-width: 120px;
+  }
+  .idx-ac-sym mark {
+    background: none;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .idx-ac-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    flex: 1;
+  }
+  .idx-ac-type {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+  }
+  .idx-ac-type.index { color: var(--accent); background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); }
+  .idx-ac-type.stock { color: var(--accent2); background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.18); }
+  .idx-ac-price {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 64px;
+    text-align: right;
+  }
+  .idx-autocomplete-list::-webkit-scrollbar { width: 3px; }
+  .idx-autocomplete-list::-webkit-scrollbar-track { background: var(--bg2); }
+  .idx-autocomplete-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* ===== HELP & RESOURCES SECTION ===== */
+  #help { background: var(--bg2); }
+
+  /* video grid */
+  .help-video-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 56px;
+  }
+
+  .video-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .video-card:hover {
+    border-color: rgba(0,212,255,0.35);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+
+  .video-thumb {
+    position: relative;
+    aspect-ratio: 16/9;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  .video-thumb-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+  }
+
+  .video-thumb-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,212,255,0.08) 0%, rgba(0,255,136,0.04) 100%);
+  }
+
+  .video-duration {
+    position: absolute;
+    bottom: 8px; right: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    background: rgba(5,10,14,0.85);
+    color: var(--text);
+    padding: 2px 7px;
+    border-radius: 2px;
+  }
+
+  .video-play-btn {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    background: rgba(0,212,255,0.12);
+  }
+
+  .video-play-btn span {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--bg);
+    box-shadow: 0 4px 20px rgba(0,212,255,0.4);
+  }
+
+  .video-card:hover .video-play-btn { opacity: 1; }
+
+  .video-info {
+    padding: 16px 18px;
+  }
+
+  .video-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    margin-bottom: 8px;
+    display: inline-block;
+  }
+
+  .vtag-beginner { color: var(--accent); background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); }
+  .vtag-advanced { color: var(--accent3); background: rgba(255,107,53,0.08); border: 1px solid rgba(255,107,53,0.2); }
+  .vtag-strategy { color: var(--accent2); background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); }
+  .vtag-risk     { color: var(--red); background: rgba(255,59,92,0.08); border: 1px solid rgba(255,59,92,0.2); }
+  .vtag-fno      { color: var(--warn); background: rgba(255,204,0,0.06); border: 1px solid rgba(255,204,0,0.18); }
+
+  .video-title {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+
+  .video-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    gap: 12px;
+  }
+
+  /* help two-col layout */
+  .help-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  /* FAQ */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .faq-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .faq-item.open { border-color: rgba(0,212,255,0.25); }
+
+  .faq-q {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    gap: 12px;
+  }
+
+  .faq-q-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .faq-icon {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--muted);
+    transition: transform 0.25s, color 0.2s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .faq-item.open .faq-icon {
+    transform: rotate(45deg);
+    color: var(--accent);
+  }
+
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, padding 0.25s ease;
+    padding: 0 20px;
+  }
+
+  .faq-item.open .faq-a {
+    max-height: 200px;
+    padding: 0 20px 16px;
+  }
+
+  .faq-a p {
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+
+  /* contact panel */
+  .contact-panel {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 28px 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .contact-panel h3 {
+    font-family: var(--display);
+    font-size: 20px;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .contact-panel .sub {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .contact-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .contact-item:hover {
+    border-color: rgba(0,212,255,0.3);
+    background: rgba(0,212,255,0.04);
+  }
+
+  .contact-icon {
+    font-size: 20px;
+    width: 36px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .contact-detail strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .contact-detail span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .contact-arrow {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--muted);
+    transition: color 0.2s, transform 0.2s;
+  }
+
+  .contact-item:hover .contact-arrow {
+    color: var(--accent);
+    transform: translateX(3px);
+  }
+
+  /* resources quick links */
+  .resources-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .resource-link {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    transition: all 0.25s;
+    cursor: pointer;
+  }
+
+  .resource-link:hover {
+    border-color: rgba(0,212,255,0.3);
+    background: rgba(0,212,255,0.04);
+    transform: translateY(-2px);
+  }
+
+  .resource-link-icon { font-size: 22px; }
+
+  .resource-link-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .resource-link-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  /* video modal */
+  .video-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9500;
+    background: rgba(5,10,14,0.92);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .video-modal-overlay.open {
+    display: flex;
+    animation: mFadeIn 0.2s ease;
+  }
+
+  .video-modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    width: min(700px, 94vw);
+    box-shadow: 0 40px 100px rgba(0,0,0,0.7);
+    animation: mSlideUp 0.28s cubic-bezier(0.34,1.2,0.64,1);
+  }
+
+  .video-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .video-modal-title {
+    font-family: var(--display);
+    font-size: 18px;
+    letter-spacing: 0.05em;
+    color: var(--text);
+  }
+
+  .video-modal-close {
+    width: 30px; height: 30px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .video-modal-close:hover { border-color: var(--red); color: var(--red); }
+
+  .video-modal-body {
+    padding: 24px;
+  }
+
+  .video-placeholder {
+    aspect-ratio: 16/9;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .video-placeholder-icon { font-size: 52px; opacity: 0.4; }
+
+  .video-placeholder-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  .video-modal-desc {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  @media (max-width: 900px) {
+    .help-video-grid { grid-template-columns: repeat(2, 1fr); }
+    .help-bottom-grid { grid-template-columns: 1fr; }
+    .resources-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 600px) {
+    .help-video-grid { grid-template-columns: 1fr; }
+    .resources-row { grid-template-columns: 1fr; }
+  }
+  /* ===== END HELP ===== */
+
+  /* ── API KEY BANNER + SETTINGS ── */
+  .api-banner {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 20px;
+    background: rgba(255,204,0,0.06);
+    border-bottom: 1px solid rgba(255,204,0,0.2);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: rgba(255,204,0,0.85);
+    letter-spacing: 0.06em;
+    position: fixed;
+    top: 38px; left: 0; right: 0;
+    z-index: 97;
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+  }
+  .api-banner.show {
+    pointer-events: all;
+  }
+  .api-banner.show { display: flex; }
+  .api-banner-icon { font-size: 14px; flex-shrink: 0; }
+  .api-banner-text { flex: 1; line-height: 1.5; }
+  .api-banner-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    background: rgba(255,204,0,0.12);
+    border: 1px solid rgba(255,204,0,0.35);
+    color: var(--warn);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .api-banner-btn:hover { background: rgba(255,204,0,0.22); }
+  .api-banner-close {
+    background: none; border: none;
+    color: rgba(255,204,0,0.5);
+    font-size: 16px; cursor: pointer;
+    padding: 0; line-height: 1;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+  .api-banner-close:hover { color: var(--warn); }
+
+  /* data status pill in top bar */
+  .data-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+  }
+  .data-status-pill.live { color: var(--accent2); background: rgba(0,255,136,0.07); }
+  .data-status-pill.delayed { color: var(--warn); background: rgba(255,204,0,0.07); }
+  .data-status-pill.demo { color: var(--muted); background: rgba(90,122,138,0.08); }
+  .data-status-pill .sdot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: currentColor;
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+
+  /* API settings modal */
+  .api-modal-overlay {
+    position: fixed; inset: 0;
+    z-index: 9500;
+    background: rgba(5,10,14,0.9);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .api-modal-overlay.open { display: flex; animation: mFadeIn 0.2s ease; }
+  .api-modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    width: min(560px, 95vw);
+    box-shadow: 0 40px 100px rgba(0,0,0,0.7);
+    animation: mSlideUp 0.28s cubic-bezier(0.34,1.2,0.64,1);
+  }
+  .api-modal-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .api-modal-title { font-family: var(--display); font-size: 22px; letter-spacing: 0.06em; color: var(--text); }
+  .api-modal-close {
+    width: 30px; height: 30px; background: none;
+    border: 1px solid var(--border); color: var(--muted);
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .api-modal-close:hover { border-color: var(--red); color: var(--red); }
+  .api-modal-body { padding: 24px 28px; }
+  .api-step {
+    display: flex; gap: 16px; align-items: flex-start;
+    margin-bottom: 18px;
+  }
+  .api-step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.25);
+    color: var(--accent);
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .api-step-text { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .api-step-text a { color: var(--accent); text-decoration: none; }
+  .api-step-text a:hover { text-decoration: underline; }
+  .api-step-text strong { color: var(--text); }
+  .api-input-wrap { position: relative; margin-top: 20px; }
+  .api-key-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    padding: 13px 48px 13px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .api-key-input:focus { border-color: var(--accent); }
+  .api-key-input::placeholder { color: var(--muted); letter-spacing: 0.04em; }
+  .api-key-toggle {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 16px; padding: 0;
+    transition: color 0.2s;
+  }
+  .api-key-toggle:hover { color: var(--accent); }
+  .api-validate-row {
+    display: flex; gap: 10px; margin-top: 12px;
+  }
+  .api-validate-btn {
+    flex: 1;
+    font-family: var(--display); font-size: 18px; letter-spacing: 0.1em;
+    background: var(--accent); color: var(--bg);
+    border: none; padding: 13px; cursor: pointer; transition: all 0.2s;
+  }
+  .api-validate-btn:hover { background: #33ddff; transform: translateY(-1px); }
+  .api-validate-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .api-clear-btn {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; background: none;
+    border: 1px solid var(--border); color: var(--muted);
+    padding: 13px 16px; cursor: pointer; transition: all 0.2s;
+  }
+  .api-clear-btn:hover { border-color: var(--red); color: var(--red); }
+  .api-status-msg {
+    margin-top: 12px;
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.08em; padding: 10px 14px;
+    display: none;
+  }
+  .api-status-msg.show { display: block; animation: stepIn 0.2s ease; }
+  .api-status-msg.ok { color: var(--accent2); background: rgba(0,255,136,0.07); border: 1px solid rgba(0,255,136,0.2); }
+  .api-status-msg.err { color: var(--red); background: rgba(255,59,92,0.08); border: 1px solid rgba(255,59,92,0.2); }
+  .api-status-msg.info { color: var(--accent); background: rgba(0,212,255,0.07); border: 1px solid rgba(0,212,255,0.2); }
+  .api-note {
+    margin-top: 16px;
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; line-height: 1.8;
+    color: rgba(90,122,138,0.7);
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== LOGIN OVERLAY ====== -->
+<div id="loginOverlay">
+  <div class="login-grid">
+
+    <!-- LEFT: Brand -->
+    <div class="login-brand">
+      <div>
+        <div class="brand-logo">Trade<span>Edge</span></div>
+        <div class="brand-tagline">NSE &middot; BSE &middot; Intraday Intelligence</div>
+      </div>
+      <ul class="brand-features">
+        <li><div class="feat-icon">📊</div><div class="feat-text"><strong>AI Trade Suggestions</strong><span>Personalized intraday picks for Equities &amp; F&amp;O tuned to your capital and risk.</span></div></li>
+        <li><div class="feat-icon">⚡</div><div class="feat-text"><strong>Live Market Data</strong><span>Track Nifty, BankNifty, Sensex, VIX — real-time in the top bar.</span></div></li>
+        <li><div class="feat-icon">🎓</div><div class="feat-text"><strong>Learn While You Trade</strong><span>ORB, VWAP, Options Greeks, risk management — built right in.</span></div></li>
+        <li><div class="feat-icon">🛡️</div><div class="feat-text"><strong>Risk-First Approach</strong><span>Every suggestion has stop-loss, targets, and position sizing.</span></div></li>
+      </ul>
+      <div class="brand-footer">Educational Use Only &middot; Not SEBI Registered &middot; v2.1</div>
+    </div>
+
+    <!-- RIGHT: Form -->
+    <div class="login-form-panel">
+
+      <!-- Step 1: Phone -->
+      <div class="login-step active" id="stepPhone">
+        <div class="step-eyebrow">Secure Login</div>
+        <div class="step-title">WELCOME<br>BACK</div>
+        <p class="step-sub">Enter your 10-digit Indian mobile number.</p>
+        <div class="l-form-group">
+          <label class="l-form-label">Mobile Number</label>
+          <div class="phone-input-wrap">
+            <div class="phone-prefix">🇮🇳 +91</div>
+            <input
+              type="tel" id="phoneInput" class="l-input"
+              placeholder="9876543210" maxlength="10" inputmode="numeric"
+              oninput="handlePhoneInput(this)"
+              onkeydown="if(event.key==='Enter' && !document.getElementById('sendOtpBtn').disabled) clickSendOTP()"
+            />
+          </div>
+          <div class="l-error" id="phoneError"></div>
+        </div>
+        <button
+          id="sendOtpBtn"
+          class="l-btn"
+          type="button"
+          disabled
+          onclick="clickSendOTP()"
+        >SEND OTP &rarr;</button>
+        <p style="margin-top:18px;font-family:var(--mono);font-size:10px;color:#2a4a5a;line-height:1.8;letter-spacing:0.08em;">
+          Demo app — no real SMS is sent. OTP valid for 5 minutes.
+        </p>
+        <p style="margin-top:10px;text-align:center;">
+          <button type="button" onclick="skipLogin()" style="background:none;border:none;font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:#2a4a5a;cursor:pointer;text-decoration:underline;padding:0;">Skip Login (Demo Mode)</button>
+        </p>
+      </div>
+
+      <!-- Step 2: OTP -->
+      <div class="login-step" id="stepOtp">
+        <button class="change-number" type="button" onclick="clickGoBack()">&#8592; Change Number</button>
+        <div class="step-eyebrow">Verify OTP</div>
+        <div class="step-title">ENTER<br>CODE</div>
+        <p class="step-sub" id="otpSubText">OTP sent to <strong>+91 XXXXXXXXXX</strong></p>
+        <div class="l-form-group">
+          <label class="l-form-label">6-Digit OTP</label>
+          <div class="otp-boxes">
+            <input class="otp-box" type="tel" maxlength="1" id="otp0" oninput="handleOtpInput(this,0)" onkeydown="handleOtpKey(event,0)" onpaste="handleOtpPaste(event)" />
+            <input class="otp-box" type="tel" maxlength="1" id="otp1" oninput="handleOtpInput(this,1)" onkeydown="handleOtpKey(event,1)" />
+            <input class="otp-box" type="tel" maxlength="1" id="otp2" oninput="handleOtpInput(this,2)" onkeydown="handleOtpKey(event,2)" />
+            <input class="otp-box" type="tel" maxlength="1" id="otp3" oninput="handleOtpInput(this,3)" onkeydown="handleOtpKey(event,3)" />
+            <input class="otp-box" type="tel" maxlength="1" id="otp4" oninput="handleOtpInput(this,4)" onkeydown="handleOtpKey(event,4)" />
+            <input class="otp-box" type="tel" maxlength="1" id="otp5" oninput="handleOtpInput(this,5)" onkeydown="handleOtpKey(event,5)" />
+          </div>
+          <div class="otp-hint">&#128161; Demo OTPs: <strong style="color:#00d4ff">123456</strong> or <strong style="color:#00d4ff">098765</strong></div>
+          <div class="l-error" id="otpError"></div>
+          <div class="l-success-msg" id="otpSuccess"></div>
+        </div>
+        <button id="verifyOtpBtn" class="l-btn" type="button" disabled onclick="clickVerifyOTP()">
+          VERIFY &amp; LOGIN &rarr;
+        </button>
+        <div class="resend-row">
+          <button class="resend-btn" type="button" id="resendBtn" disabled onclick="clickResendOTP()">&#8635; Resend OTP</button>
+          <span class="resend-timer" id="resendTimer">Resend in <strong id="timerCount">30</strong>s</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- ====== END LOGIN ====== -->
+
+<!-- API KEY BANNER -->
+<div class="api-banner" id="apiBanner">
+  <span class="api-banner-icon">⚡</span>
+  <span class="api-banner-text">
+    <strong>Using demo data.</strong> Connect a Twelve Data API key through the local TradeEdge server to get live NSE/BSE prices in the indices bar and symbol search.
+  </span>
+  <button class="api-banner-btn" id="apiBannerBtn" onclick="openApiModal()">Connect API →</button>
+  <button class="api-banner-close" onclick="document.getElementById('apiBanner').classList.remove('show')" title="Dismiss">✕</button>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="api-modal-overlay" id="apiModalOverlay" onclick="if(event.target===this)closeApiModal()">
+  <div class="api-modal">
+    <div class="api-modal-hdr">
+      <div class="api-modal-title">LIVE DATA SETUP</div>
+      <button class="api-modal-close" onclick="closeApiModal()">✕</button>
+    </div>
+    <div class="api-modal-body">
+      <div class="api-step">
+        <div class="api-step-num">1</div>
+        <div class="api-step-text">
+          Go to <a href="https://twelvedata.com/register" target="_blank">twelvedata.com/register</a> and create a <strong>free account</strong>. No credit card needed. The free plan gives you <strong>800 API calls/day</strong> — plenty for this app.
+        </div>
+      </div>
+      <div class="api-step">
+        <div class="api-step-num">2</div>
+        <div class="api-step-text">
+          After logging in, go to your <strong>Dashboard → API Keys</strong> and copy your key.
+        </div>
+      </div>
+      <div class="api-step">
+        <div class="api-step-num">3</div>
+        <div class="api-step-text">
+          Paste your key below and click <strong>Validate &amp; Save</strong>. The key is stored by the local TradeEdge server, and the top bar plus symbol search will switch to live NSE data.
+        </div>
+      </div>
+
+      <div class="api-input-wrap">
+        <input class="api-key-input" id="apiKeyInput" type="password"
+          placeholder="Paste your Twelve Data API key here…"
+          oninput="document.getElementById('apiStatusMsg').classList.remove('show')" />
+        <button class="api-key-toggle" onclick="toggleApiKeyVis()" title="Show/hide key" id="apiKeyToggle">👁</button>
+      </div>
+
+      <div class="api-validate-row">
+        <button class="api-validate-btn" id="apiValidateBtn" onclick="validateAndSaveKey()">VALIDATE &amp; SAVE →</button>
+        <button class="api-clear-btn" onclick="clearApiKey()">Remove Key</button>
+      </div>
+
+      <div class="api-status-msg" id="apiStatusMsg"></div>
+
+      <div class="api-note" id="apiNote">
+        🔒 Your API key is stored by the local TradeEdge server on this machine, not in the page itself. &nbsp;|&nbsp;
+        Data is refreshed every 15 seconds. &nbsp;|&nbsp;
+        Open the site through <code>http://localhost:8080/</code> so the live-data API is available.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- INDICES BAR -->
+<div class="indices-bar" id="indicesBar">
+  <div class="indices-bar-label">
+    <div class="dot"></div>
+    INDICES
+  </div>
+  <div class="data-status-pill demo" id="dataStatusPill">
+    <span class="sdot"></span>
+    <span id="dataStatusText">DEMO</span>
+  </div>
+  <div class="indices-scroll-wrap">
+    <div class="indices-track" id="indicesTrack"></div>
+  </div>
+  <button class="indices-edit-btn" onclick="openApiModal()" title="Live data settings" style="border-right:1px solid var(--border)">
+    ⚡ Live Data
+  </button>
+  <button class="indices-edit-btn" onclick="openIdxModal()">
+    ✏ Edit
+  </button>
+</div>
+
+<!-- INDEX EDIT MODAL -->
+<div class="idx-modal-overlay" id="idxModalOverlay" onclick="closeIdxModalOutside(event)">
+  <div class="idx-modal" id="idxModal">
+    <div class="idx-modal-header">
+      <div class="idx-modal-title">MANAGE INDICES</div>
+      <button class="idx-modal-close" onclick="closeIdxModal()">✕</button>
+    </div>
+    <div class="idx-modal-body">
+      <div class="idx-modal-info">
+        Add up to 8 symbols — NSE stocks, indices, or F&amp;O contracts. Changes are saved to your browser and will persist across sessions.
+      </div>
+
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Quick Add</div>
+      <div class="idx-presets" id="idxPresets"></div>
+
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Your Symbols <span id="symbolCount" style="color:var(--accent)"></span></div>
+      <div class="idx-symbol-list" id="idxSymbolList"></div>
+
+      <div class="idx-add-row">
+        <div class="idx-autocomplete-wrap">
+          <input class="idx-add-input" id="idxAddInput" placeholder="Search symbol e.g. NIFTY, RELIANCE, TCS…" maxlength="20"
+            autocomplete="off"
+            oninput="onIdxSearchInput(this)"
+            onkeydown="onIdxSearchKey(event)"
+            onfocus="showAcList()"
+            onblur="hideAcListDelayed()" />
+          <div class="idx-autocomplete-list" id="idxAcList"></div>
+        </div>
+        <button class="idx-add-btn" id="idxAddBtn" onclick="addIdxSymbol()">+ Add</button>
+      </div>
+      <div class="idx-limit-note" id="idxLimitNote"></div>
+    </div>
+    <div class="idx-modal-footer">
+      <button class="idx-save-btn" onclick="saveIdxSymbols()">SAVE &amp; APPLY</button>
+      <button class="idx-reset-btn" onclick="resetIdxSymbols()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Trade<span>Edge</span></div>
+  <ul>
+    <li><a href="#learn">Learn</a></li>
+    <li><a href="#market">Markets</a></li>
+    <li><a href="#concepts">Concepts</a></li>
+    <li><a href="#help">Help</a></li>
+  </ul>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="nav-badge" id="marketStatus">MARKET CLOSED</div>
+    <button onclick="logoutUser()" title="Logout" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:0.1em;padding:4px 10px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">LOGOUT</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-label">NSE • BSE • Intraday Intelligence</div>
+    <h1>TRADE<br><span class="hl">SMARTER</span><br><span class="hl2">TODAY</span></h1>
+    <p class="hero-sub">
+      Your AI-powered intraday trading companion for Indian markets. Get real-time trade suggestions for Equities and F&O, manage risk intelligently, and understand the market structure — all in one place.
+    </p>
+    <div class="hero-cta">
+      <a href="#market" class="btn-primary">Explore Markets</a>
+      <a href="#learn" class="btn-outline">Learn Intraday</a>
+    </div>
+  </section>
+
+  <!-- STATS ROW (kept hidden, replaced by dynamic indices bar above) -->
+  <div class="stats-row" style="display:none"></div>
+
+  <!-- LEARN SECTION -->
+  <section id="learn">
+    <div class="section-header">
+      <div>
+        <div class="section-label">Education Hub</div>
+        <div class="section-title">MASTER INTRADAY</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('equities')">Equities</button>
+      <button class="tab-btn" onclick="switchTab('fno')">F&amp;O</button>
+      <button class="tab-btn" onclick="switchTab('strategy')">Strategies</button>
+      <button class="tab-btn" onclick="switchTab('risk')">Risk Mgmt</button>
+    </div>
+
+    <div class="tab-content active" id="tab-equities">
+      <div class="learn-card" data-num="01">
+        <h3>What is Intraday Equity?</h3>
+        <p>Intraday equity trading means buying and selling stocks within the same trading session (9:15 AM – 3:30 PM IST). Positions must be squared off before market close. Brokers typically offer 5x–10x leverage on intraday positions, amplifying both gains and losses.</p>
+        <span class="tag beginner">Beginner</span>
+      </div>
+      <div class="learn-card" data-num="02">
+        <h3>Entry & Exit Timing</h3>
+        <p>The first 15 minutes (9:15–9:30) are highly volatile — experienced traders wait. The 10:00–11:30 window is considered the most liquid and directional. Avoid holding positions after 3:00 PM as reversal risk increases ahead of close.</p>
+        <span class="tag strategy">Strategy</span>
+      </div>
+      <div class="learn-card" data-num="03">
+        <h3>Volume & Liquidity</h3>
+        <p>Only trade stocks with high average daily volumes (>5 lakh shares). Low-liquidity stocks have wide bid-ask spreads that erode profits. Stocks in NSE's F&O segment are generally the most liquid for intraday purposes.</p>
+        <span class="tag beginner">Beginner</span>
+      </div>
+      <div class="learn-card" data-num="04">
+        <h3>MIS vs CNC Orders</h3>
+        <p>Use MIS (Margin Intraday Square-off) order type for intraday positions. CNC (Cash and Carry) is for delivery. MIS orders are auto-squared off by brokers at 3:15–3:20 PM if you don't exit yourself, sometimes at unfavorable prices.</p>
+        <span class="tag strategy">Strategy</span>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-fno">
+      <div class="learn-card" data-num="01">
+        <h3>Futures (F) Basics</h3>
+        <p>Futures are contracts to buy/sell an underlying (Nifty, BankNifty, stocks) at a fixed price on expiry. Each lot has a fixed size (e.g., Nifty = 50 units). Intraday futures trading requires lower margin than overnight and carries significant leverage — a 1% move in Nifty can mean 5–10% on your margin.</p>
+        <span class="tag advanced">Advanced</span>
+      </div>
+      <div class="learn-card" data-num="02">
+        <h3>Options (O) Basics</h3>
+        <p>Options give the right (not obligation) to buy (Call) or sell (Put). For intraday, traders buy OTM options for directional bets. Theta decay is brutal for option buyers — a flat day can wipe 20–30% of premium. Best for trending days with clear catalysts like RBI policy or earnings.</p>
+        <span class="tag advanced">Advanced</span>
+      </div>
+      <div class="learn-card" data-num="03">
+        <h3>Weekly Expiry Trading</h3>
+        <p>Nifty and BankNifty have weekly expiries every Thursday. The last day sees aggressive theta decay and gamma explosion near-the-money. Many retail traders lose capital buying options on expiry day — it's a specialist game requiring quick exits and tight stops.</p>
+        <span class="tag risk">High Risk</span>
+      </div>
+      <div class="learn-card" data-num="04">
+        <h3>Open Interest Analysis</h3>
+        <p>OI (Open Interest) shows active contracts. Rising OI + rising price = bullish confirmation. Falling OI + rising price = short covering rally (less sustainable). The Max Pain level (price where maximum options expire worthless) acts as a magnet near expiry. Check NSE options chain daily.</p>
+        <span class="tag strategy">Strategy</span>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-strategy">
+      <div class="learn-card" data-num="01">
+        <h3>Opening Range Breakout</h3>
+        <p>Mark the high and low of the first 15–30 minutes. A breakout above the high with volume signals bullish momentum; below the low signals bearish. This is the most popular intraday strategy in Indian markets. Set stop-loss at the opposite end of the range.</p>
+        <span class="tag strategy">Strategy</span>
+      </div>
+      <div class="learn-card" data-num="02">
+        <h3>VWAP Trading</h3>
+        <p>VWAP (Volume Weighted Average Price) is the benchmark for institutional traders. Price above VWAP = bullish bias; below = bearish. Buy dips to VWAP in uptrends, sell rallies to VWAP in downtrends. Most professional intraday strategies incorporate VWAP as a key level.</p>
+        <span class="tag strategy">Strategy</span>
+      </div>
+      <div class="learn-card" data-num="03">
+        <h3>Trend + Pullback</h3>
+        <p>Identify the direction using EMA (9, 20) crossover on 5-minute charts. Wait for a pullback to the 20 EMA in an uptrend, then enter on a bullish candle confirmation. This trades with momentum while avoiding chasing — improving your risk/reward significantly.</p>
+        <span class="tag beginner">Beginner</span>
+      </div>
+      <div class="learn-card" data-num="04">
+        <h3>Support/Resistance Flip</h3>
+        <p>When price breaks a strong support level and retests it from below (now acting as resistance), it's a high-probability short entry. The reverse (resistance becomes support) is a long entry. Combine with volume spike at the breakout for confirmation.</p>
+        <span class="tag strategy">Strategy</span>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-risk">
+      <div class="learn-card" data-num="01">
+        <h3>The 1% Rule</h3>
+        <p>Never risk more than 1–2% of your trading capital on a single trade. If you have ₹1,00,000, maximum loss per trade = ₹1,000–₹2,000. Calculate your stop-loss first, then determine position size. Most traders blow up accounts by ignoring this rule.</p>
+        <span class="tag risk">Critical</span>
+      </div>
+      <div class="learn-card" data-num="02">
+        <h3>Stop-Loss Discipline</h3>
+        <p>Set your stop-loss BEFORE entering the trade — not after. Never move a stop-loss further away hoping for recovery. Use hard stop-loss orders (not mental stops). A stock with a "small" 3% stop-loss becomes a 15% loss if you keep adjusting. Honor your stop, always.</p>
+        <span class="tag risk">Critical</span>
+      </div>
+      <div class="learn-card" data-num="03">
+        <h3>Daily Loss Limit</h3>
+        <p>Set a maximum daily drawdown of 3–5% of capital. Once hit, stop trading for the day. Revenge trading after losses leads to the biggest account drawdowns. Professional traders treat daily stop-loss as sacred — it preserves capital to trade another day.</p>
+        <span class="tag risk">Critical</span>
+      </div>
+      <div class="learn-card" data-num="04">
+        <h3>Risk/Reward Ratio</h3>
+        <p>Only take trades with minimum 1:2 risk/reward (risk ₹1 to make ₹2). This means you can be right only 40% of the time and still be profitable. Most new traders take 1:1 or worse setups. A good setup has defined entry, stop-loss, and at least 2 targets before you enter.</p>
+        <span class="tag strategy">Strategy</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONCEPTS SECTION -->
+  <section id="concepts">
+    <div class="section-header">
+      <div>
+        <div class="section-label">Quick Reference</div>
+        <div class="section-title">KEY CONCEPTS</div>
+      </div>
+    </div>
+
+    <div class="concepts-grid">
+      <div class="concept-card">
+        <span class="concept-icon">📊</span>
+        <h3>Lot Size</h3>
+        <p>The minimum quantity you can trade in F&O. Nifty = 50 units, BankNifty = 15, FinNifty = 40. Buying one lot means you control the value of that many units.</p>
+      </div>
+      <div class="concept-card">
+        <span class="concept-icon">⚡</span>
+        <h3>Leverage</h3>
+        <p>Intraday equities: 5–10x. F&O futures: 5–8x. Options: Potentially 50–100x (high risk). Higher leverage = higher potential returns AND losses.</p>
+      </div>
+      <div class="concept-card">
+        <span class="concept-icon">🎯</span>
+        <h3>Theta Decay</h3>
+        <p>Options lose value every day due to time decay (theta). For option buyers, time is the enemy. For sellers, time is money. Maximum decay occurs in the last week before expiry.</p>
+      </div>
+      <div class="concept-card">
+        <span class="concept-icon">📈</span>
+        <h3>PCR Ratio</h3>
+        <p>Put-Call Ratio = total Put OI ÷ total Call OI. PCR > 1.2 = oversold/bullish reversal likely. PCR < 0.8 = overbought/bearish reversal likely. Watch daily on NSE website.</p>
+      </div>
+      <div class="concept-card">
+        <span class="concept-icon">🔄</span>
+        <h3>Margin</h3>
+        <p>SPAN + Exposure margin is required for F&O. SEBI's peak margin rules mean you need full margin throughout the day. Check your broker's margin calculator before trading.</p>
+      </div>
+      <div class="concept-card">
+        <span class="concept-icon">💧</span>
+        <h3>Liquidity</h3>
+        <p>Always check bid-ask spread before trading. A ₹10 spread on a ₹100 option means you're starting 10% in the hole. Stick to ATM or near-ATM options for tighter spreads.</p>
+      </div>
+      <div class="concept-card">
+        <span class="concept-icon">🕐</span>
+        <h3>Market Hours</h3>
+        <p>Pre-open: 9:00–9:15 AM. Regular session: 9:15 AM–3:30 PM. Post-market: 3:40–4:00 PM. F&O positions should ideally be squared off by 3:25 PM.</p>
+      </div>
+      <div class="concept-card">
+        <span class="concept-icon">🛡️</span>
+        <h3>Circuit Breakers</h3>
+        <p>NSE halts trading if Nifty moves 10%, 15%, or 20% in a day. Individual stocks have 5%, 10%, or 20% circuit filters. F&O stocks generally have 20% circuit limits.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HELP & RESOURCES -->
+  <section id="help">
+    <div class="section-header">
+      <div>
+        <div class="section-label">Support Centre</div>
+        <div class="section-title">HELP &amp; RESOURCES</div>
+      </div>
+    </div>
+
+    <!-- VIDEO TUTORIALS -->
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+      <span style="display:inline-block;width:24px;height:1px;background:var(--accent)"></span>
+      Video Tutorials
+    </div>
+
+    <div class="help-video-grid">
+
+      <div class="video-card" onclick="openVideoModal('What is Intraday Trading?','A complete beginner-friendly introduction to intraday trading in Indian markets. Covers the difference between delivery and intraday, MIS orders, leverage, and what makes a good intraday stock.','📹','18:32','beginner')">
+        <div class="video-thumb">
+          <div class="video-thumb-bg" style="background:linear-gradient(135deg,#050a0e,#0a1a28)">📊</div>
+          <div class="video-thumb-gradient"></div>
+          <div class="video-play-btn"><span>▶</span></div>
+          <div class="video-duration">18:32</div>
+        </div>
+        <div class="video-info">
+          <div class="video-tag vtag-beginner">Beginner</div>
+          <div class="video-title">What is Intraday Trading? Complete Beginner Guide</div>
+          <div class="video-meta"><span>📅 TradeEdge Academy</span><span>👁 42K views</span></div>
+        </div>
+      </div>
+
+      <div class="video-card" onclick="openVideoModal('Opening Range Breakout (ORB) Strategy','Learn the most popular intraday strategy used by Indian traders. Understand how to mark the opening range, identify breakouts with volume, set entry/exit levels, and manage trades in real time.','📈','24:15','strategy')">
+        <div class="video-thumb">
+          <div class="video-thumb-bg" style="background:linear-gradient(135deg,#050a0e,#0d1f10)">📈</div>
+          <div class="video-thumb-gradient" style="background:linear-gradient(135deg,rgba(0,255,136,0.07),transparent)"></div>
+          <div class="video-play-btn"><span>▶</span></div>
+          <div class="video-duration">24:15</div>
+        </div>
+        <div class="video-info">
+          <div class="video-tag vtag-strategy">Strategy</div>
+          <div class="video-title">Opening Range Breakout (ORB) — Live Examples on NSE</div>
+          <div class="video-meta"><span>📅 TradeEdge Academy</span><span>👁 78K views</span></div>
+        </div>
+      </div>
+
+      <div class="video-card" onclick="openVideoModal('Understanding F&amp;O: Futures &amp; Options Basics','Demystify Futures and Options for the Indian market. Covers lot sizes, margin requirements, call vs put, intrinsic and time value, and how to read the NSE options chain effectively.','⚡','31:40','fno')">
+        <div class="video-thumb">
+          <div class="video-thumb-bg" style="background:linear-gradient(135deg,#050a0e,#1a140a)">⚡</div>
+          <div class="video-thumb-gradient" style="background:linear-gradient(135deg,rgba(255,204,0,0.06),transparent)"></div>
+          <div class="video-play-btn"><span>▶</span></div>
+          <div class="video-duration">31:40</div>
+        </div>
+        <div class="video-info">
+          <div class="video-tag vtag-fno">F&amp;O</div>
+          <div class="video-title">F&amp;O for Beginners — Futures &amp; Options Explained Simply</div>
+          <div class="video-meta"><span>📅 TradeEdge Academy</span><span>👁 95K views</span></div>
+        </div>
+      </div>
+
+      <div class="video-card" onclick="openVideoModal('Risk Management Masterclass','The most important video for any trader. Learn position sizing, the 1% rule, stop-loss discipline, daily drawdown limits, and how to build a trading plan that survives bad days.','🛡️','27:08','risk')">
+        <div class="video-thumb">
+          <div class="video-thumb-bg" style="background:linear-gradient(135deg,#050a0e,#1a0a0d)">🛡️</div>
+          <div class="video-thumb-gradient" style="background:linear-gradient(135deg,rgba(255,59,92,0.06),transparent)"></div>
+          <div class="video-play-btn"><span>▶</span></div>
+          <div class="video-duration">27:08</div>
+        </div>
+        <div class="video-info">
+          <div class="video-tag vtag-risk">Risk Mgmt</div>
+          <div class="video-title">Risk Management Masterclass — Protect Your Capital</div>
+          <div class="video-meta"><span>📅 TradeEdge Academy</span><span>👁 61K views</span></div>
+        </div>
+      </div>
+
+      <div class="video-card" onclick="openVideoModal('VWAP Trading Strategy','Master VWAP — the institutional benchmark. Learn how to use VWAP for entry timing, trend confirmation, and intraday bias. Includes live Nifty and stock examples with real setups.','🎯','21:55','strategy')">
+        <div class="video-thumb">
+          <div class="video-thumb-bg" style="background:linear-gradient(135deg,#050a0e,#0a1a28)">🎯</div>
+          <div class="video-thumb-gradient"></div>
+          <div class="video-play-btn"><span>▶</span></div>
+          <div class="video-duration">21:55</div>
+        </div>
+        <div class="video-info">
+          <div class="video-tag vtag-strategy">Strategy</div>
+          <div class="video-title">VWAP Trading — How Institutions Trade Intraday</div>
+          <div class="video-meta"><span>📅 TradeEdge Academy</span><span>👁 53K views</span></div>
+        </div>
+      </div>
+
+      <div class="video-card" onclick="openVideoModal('Reading the NSE Options Chain','Learn to read and interpret the NSE options chain like a pro. Understand OI buildup, PCR ratio, max pain theory, IV crush, and how to use this data for intraday direction bias on Nifty and BankNifty.','📋','19:22','advanced')">
+        <div class="video-thumb">
+          <div class="video-thumb-bg" style="background:linear-gradient(135deg,#050a0e,#140e1a)">📋</div>
+          <div class="video-thumb-gradient" style="background:linear-gradient(135deg,rgba(255,107,53,0.07),transparent)"></div>
+          <div class="video-play-btn"><span>▶</span></div>
+          <div class="video-duration">19:22</div>
+        </div>
+        <div class="video-info">
+          <div class="video-tag vtag-advanced">Advanced</div>
+          <div class="video-title">Reading NSE Options Chain — OI, PCR &amp; Max Pain</div>
+          <div class="video-meta"><span>📅 TradeEdge Academy</span><span>👁 87K views</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FAQ + CONTACT GRID -->
+    <div class="help-bottom-grid">
+
+      <!-- FAQ -->
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+          <span style="display:inline-block;width:24px;height:1px;background:var(--accent)"></span>
+          Frequently Asked Questions
+        </div>
+        <div class="faq-list" id="faqList">
+
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span class="faq-q-text">What is the minimum capital needed to start intraday trading?</span>
+              <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-a"><p>For equities, you can technically start with ₹5,000–₹10,000 using MIS (intraday) leverage. However, ₹50,000–₹1,00,000 is recommended so that position sizes are meaningful and you can manage risk properly. For F&O, the minimum margin for 1 lot of Nifty futures is approximately ₹1.2–1.5 lakh. Starting small and scaling up as you gain experience is always advisable.</p></div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span class="faq-q-text">Are trade suggestions on TradeEdge actual buy/sell signals?</span>
+              <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-a"><p>No. All trade suggestions generated on TradeEdge are AI-generated educational ideas based on common technical patterns and market conditions. They are not SEBI-registered investment advice. You must do your own analysis, verify current price levels with your broker, and apply your own risk management before placing any trade. Never trade based solely on any automated system.</p></div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span class="faq-q-text">What time should I place my intraday trades?</span>
+              <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-a"><p>The best intraday window is typically 10:00 AM – 12:30 PM and again 2:00 PM – 3:00 PM. Avoid the first 15 minutes (9:15–9:30 AM) due to high volatility and wide spreads. Never hold unhedged intraday positions after 3:15 PM — many brokers auto-square off MIS positions between 3:15 and 3:20 PM, sometimes at unfavourable prices.</p></div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span class="faq-q-text">How do I add custom symbols to the indices bar?</span>
+              <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-a"><p>Click the ✏ Edit button on the top indices bar. In the modal, you can search for any NSE symbol using the search box with autocomplete, add from the Quick Add presets, or type in any symbol directly. You can add up to 8 symbols. Changes are saved locally and persist across sessions. Click Save &amp; Apply to update the bar.</p></div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span class="faq-q-text">What is the difference between Futures and Options?</span>
+              <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-a"><p>Futures obligate you to buy/sell the underlying at expiry — your profit or loss is unlimited in both directions. Options give you the right (not obligation) to buy (Call) or sell (Put) — as a buyer, your maximum loss is the premium paid, while gains can be large. Futures carry more margin; options can be bought with smaller capital but lose value due to theta (time decay) every day.</p></div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span class="faq-q-text">Why is India VIX important for intraday traders?</span>
+              <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-a"><p>India VIX measures expected market volatility over the next 30 days. VIX above 20 = high fear, wider moves expected — reduce position sizes and widen stops. VIX below 13 = low volatility, tighter ranges — breakout strategies work better. A sudden spike in VIX during the day signals institutional hedging and possible sharp moves in either direction.</p></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CONTACT + RESOURCES -->
+      <div style="display:flex;flex-direction:column;gap:24px;">
+
+        <!-- Contact -->
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+            <span style="display:inline-block;width:24px;height:1px;background:var(--accent)"></span>
+            Contact &amp; Support
+          </div>
+          <div class="contact-panel">
+            <h3>WE'RE HERE TO HELP</h3>
+            <p class="sub">Reach out through any channel below. Our support team is available Mon–Fri, 9:00 AM – 6:00 PM IST.</p>
+            <div class="contact-items">
+              <a class="contact-item" href="/cdn-cgi/l/email-protection#790a0c0909160b0d390d0b181d1c1c1d1e1c571017">
+                <span class="contact-icon">📧</span>
+                <div class="contact-detail">
+                  <strong>Email Support</strong>
+                  <span><span class="__cf_email__" data-cfemail="81f2f4f1f1eef3f5c1f5f3e0e5e4e4e5e6e4afe8ef">[email&#160;protected]</span></span>
+                </div>
+                <span class="contact-arrow">→</span>
+              </a>
+              <a class="contact-item" href="tel:+918001234567">
+                <span class="contact-icon">📞</span>
+                <div class="contact-detail">
+                  <strong>Helpline</strong>
+                  <span>+91 800 123 4567 · Mon–Fri 9AM–6PM</span>
+                </div>
+                <span class="contact-arrow">→</span>
+              </a>
+              <a class="contact-item" href="#">
+                <span class="contact-icon">💬</span>
+                <div class="contact-detail">
+                  <strong>Live Chat</strong>
+                  <span>Available during market hours</span>
+                </div>
+                <span class="contact-arrow">→</span>
+              </a>
+              <a class="contact-item" href="#">
+                <span class="contact-icon">🐦</span>
+                <div class="contact-detail">
+                  <strong>Twitter / X</strong>
+                  <span>@TradeEdgeIN · Market updates &amp; alerts</span>
+                </div>
+                <span class="contact-arrow">→</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Resources -->
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+            <span style="display:inline-block;width:24px;height:1px;background:var(--accent)"></span>
+            Quick Resources
+          </div>
+          <div class="resources-row">
+            <a class="resource-link" href="https://www.nseindia.com" target="_blank">
+              <span class="resource-link-icon">🏛️</span>
+              <span class="resource-link-label">NSE India</span>
+              <span class="resource-link-sub">Official Exchange</span>
+            </a>
+            <a class="resource-link" href="https://www.bseindia.com" target="_blank">
+              <span class="resource-link-icon">🏦</span>
+              <span class="resource-link-label">BSE India</span>
+              <span class="resource-link-sub">Official Exchange</span>
+            </a>
+            <a class="resource-link" href="https://www.sebi.gov.in" target="_blank">
+              <span class="resource-link-icon">⚖️</span>
+              <span class="resource-link-label">SEBI</span>
+              <span class="resource-link-sub">Regulator</span>
+            </a>
+            <a class="resource-link" href="https://zerodha.com/varsity" target="_blank">
+              <span class="resource-link-icon">📚</span>
+              <span class="resource-link-label">Zerodha Varsity</span>
+              <span class="resource-link-sub">Free Education</span>
+            </a>
+            <a class="resource-link" href="https://www.investopedia.com" target="_blank">
+              <span class="resource-link-icon">🔍</span>
+              <span class="resource-link-label">Investopedia</span>
+              <span class="resource-link-sub">Concepts & Terms</span>
+            </a>
+            <a class="resource-link" href="https://www.moneycontrol.com" target="_blank">
+              <span class="resource-link-icon">📰</span>
+              <span class="resource-link-label">MoneyControl</span>
+              <span class="resource-link-sub">News & Data</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+  <!-- END HELP & RESOURCES -->
+
+  <!-- VIDEO MODAL -->
+  <div class="video-modal-overlay" id="videoModalOverlay" onclick="closeVideoModalOutside(event)">
+    <div class="video-modal" id="videoModal">
+      <div class="video-modal-header">
+        <div class="video-modal-title" id="videoModalTitle">Video Title</div>
+        <button class="video-modal-close" onclick="closeVideoModal()">✕</button>
+      </div>
+      <div class="video-modal-body">
+        <div class="video-placeholder">
+          <div class="video-placeholder-icon" id="videoModalIcon">📹</div>
+          <div class="video-placeholder-text">
+            This is a demo platform — video content coming soon.<br>
+            Subscribe to TradeEdge Academy for updates.
+          </div>
+        </div>
+        <p class="video-modal-desc" id="videoModalDesc"></p>
+      </div>
+    </div>
+  </div>
+
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">TRADEEDGE</div>
+  <div class="footer-note">For educational purposes only. Not SEBI-registered investment advice. Trading in derivatives is subject to market risk. Read all scheme-related documents carefully before trading.</div>
+  <div class="footer-logo" style="font-size:12px; font-family: var(--mono);">NSE • BSE • MCX</div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ============= INDICES BAR =============
+// ── FULL SYMBOL DATABASE (indices + Nifty 50 + popular stocks) ──
+const SYMBOL_MASTER = {
+  // ── Indices ──
+  'NIFTY':      { price: 22640,  chg: +0.72,  label: 'NIFTY 50',      type: 'index'  },
+  'NIFTY50':    { price: 22640,  chg: +0.72,  label: 'NIFTY 50',      type: 'index'  },
+  'BANKNIFTY':  { price: 48320,  chg: +0.41,  label: 'BANK NIFTY',    type: 'index'  },
+  'SENSEX':     { price: 74850,  chg: +0.65,  label: 'SENSEX',        type: 'index'  },
+  'INDIAVIX':   { price: 14.25,  chg: -3.20,  label: 'INDIA VIX',     type: 'index'  },
+  'MIDCPNIFTY': { price: 12980,  chg: +1.10,  label: 'MIDCAP NIFTY',  type: 'index'  },
+  'FINNIFTY':   { price: 23410,  chg: +0.58,  label: 'FIN NIFTY',     type: 'index'  },
+  'NIFTYNXT50': { price: 68200,  chg: +0.33,  label: 'NIFTY NEXT 50', type: 'index'  },
+  'NIFTYNEXT50':{ price: 68200,  chg: +0.33,  label: 'NIFTY NEXT 50', type: 'index'  },
+  'NIFTYIT':    { price: 38500,  chg: -0.44,  label: 'NIFTY IT',      type: 'index'  },
+  'NIFTYMETAL': { price: 8900,   chg: +1.32,  label: 'NIFTY METAL',   type: 'index'  },
+  'NIFTYPHARMA':{ price: 21400,  chg: +0.61,  label: 'NIFTY PHARMA',  type: 'index'  },
+  'NIFTYAUTO':  { price: 23600,  chg: +0.88,  label: 'NIFTY AUTO',    type: 'index'  },
+  'NIFTYFMCG':  { price: 56200,  chg: -0.15,  label: 'NIFTY FMCG',    type: 'index'  },
+  'NIFTYREALTY':{ price: 1050,   chg: +2.10,  label: 'NIFTY REALTY',  type: 'index'  },
+  'NIFTYENERGY':{ price: 41800,  chg: +0.55,  label: 'NIFTY ENERGY',  type: 'index'  },
+  'NIFTYINFRA': { price: 9800,   chg: +0.42,  label: 'NIFTY INFRA',   type: 'index'  },
+  'NIFTYPSE':   { price: 10200,  chg: +0.78,  label: 'NIFTY PSE',     type: 'index'  },
+  // ── Nifty 50 Stocks ──
+  'RELIANCE':   { price: 2847,   chg: +1.22,  label: 'RELIANCE',      type: 'stock'  },
+  'TCS':        { price: 3920,   chg: -0.38,  label: 'TCS',           type: 'stock'  },
+  'HDFCBANK':   { price: 1643,   chg: -0.55,  label: 'HDFC BANK',     type: 'stock'  },
+  'INFY':       { price: 1758,   chg: +0.84,  label: 'INFOSYS',       type: 'stock'  },
+  'ICICIBANK':  { price: 1087,   chg: +1.51,  label: 'ICICI BANK',    type: 'stock'  },
+  'HINDUNILVR': { price: 2380,   chg: -0.32,  label: 'HUL',           type: 'stock'  },
+  'ITC':        { price: 467,    chg: -0.21,  label: 'ITC',           type: 'stock'  },
+  'SBIN':       { price: 782,    chg: +1.83,  label: 'SBI',           type: 'stock'  },
+  'BHARTIARTL': { price: 1834,   chg: +2.10,  label: 'AIRTEL',        type: 'stock'  },
+  'KOTAKBANK':  { price: 1785,   chg: +0.47,  label: 'KOTAK BANK',    type: 'stock'  },
+  'LT':         { price: 3456,   chg: +0.92,  label: 'L&T',           type: 'stock'  },
+  'AXISBANK':   { price: 1124,   chg: -0.78,  label: 'AXIS BANK',     type: 'stock'  },
+  'ASIANPAINT': { price: 2650,   chg: -0.61,  label: 'ASIAN PAINTS',  type: 'stock'  },
+  'MARUTI':     { price: 12450,  chg: -0.52,  label: 'MARUTI',        type: 'stock'  },
+  'SUNPHARMA':  { price: 1680,   chg: +0.73,  label: 'SUN PHARMA',    type: 'stock'  },
+  'TITAN':      { price: 3560,   chg: +0.28,  label: 'TITAN',         type: 'stock'  },
+  'NESTLEIND':  { price: 2410,   chg: -0.18,  label: 'NESTLE INDIA',  type: 'stock'  },
+  'ULTRACEMCO': { price: 9800,   chg: +0.44,  label: 'ULTRATECH CEM', type: 'stock'  },
+  'BAJFINANCE': { price: 7320,   chg: +1.05,  label: 'BAJAJ FINANCE', type: 'stock'  },
+  'BAJAJFINSV': { price: 1720,   chg: +0.66,  label: 'BAJAJ FINSERV', type: 'stock'  },
+  'WIPRO':      { price: 512,    chg: -0.29,  label: 'WIPRO',         type: 'stock'  },
+  'HCLTECH':    { price: 1870,   chg: +0.55,  label: 'HCL TECH',      type: 'stock'  },
+  'TECHM':      { price: 1560,   chg: -0.42,  label: 'TECH MAHINDRA', type: 'stock'  },
+  'ONGC':       { price: 278,    chg: +0.36,  label: 'ONGC',          type: 'stock'  },
+  'NTPC':       { price: 362,    chg: +0.88,  label: 'NTPC',          type: 'stock'  },
+  'POWERGRID':  { price: 320,    chg: +0.55,  label: 'POWER GRID',    type: 'stock'  },
+  'COALINDIA':  { price: 445,    chg: +1.20,  label: 'COAL INDIA',    type: 'stock'  },
+  'TATAMOTORS': { price: 937,    chg: +2.31,  label: 'TATA MOTORS',   type: 'stock'  },
+  'TATASTEEL':  { price: 156,    chg: +1.44,  label: 'TATA STEEL',    type: 'stock'  },
+  'JSWSTEEL':   { price: 920,    chg: +0.88,  label: 'JSW STEEL',     type: 'stock'  },
+  'HINDALCO':   { price: 671,    chg: +1.88,  label: 'HINDALCO',      type: 'stock'  },
+  'ADANIENT':   { price: 2750,   chg: +1.65,  label: 'ADANI ENT',     type: 'stock'  },
+  'ADANIPORTS': { price: 1340,   chg: +0.92,  label: 'ADANI PORTS',   type: 'stock'  },
+  'ADANIGREEN': { price: 1820,   chg: +2.30,  label: 'ADANI GREEN',   type: 'stock'  },
+  'ADANIPOWER': { price: 580,    chg: +1.44,  label: 'ADANI POWER',   type: 'stock'  },
+  'GRASIM':     { price: 2620,   chg: +0.38,  label: 'GRASIM',        type: 'stock'  },
+  'BRITANNIA':  { price: 5480,   chg: -0.22,  label: 'BRITANNIA',     type: 'stock'  },
+  'EICHERMOT':  { price: 4850,   chg: +0.61,  label: 'EICHER MOTORS', type: 'stock'  },
+  'HEROMOTOCO': { price: 4980,   chg: +0.44,  label: 'HERO MOTOCORP', type: 'stock'  },
+  'BPCL':       { price: 310,    chg: +0.97,  label: 'BPCL',          type: 'stock'  },
+  'CIPLA':      { price: 1560,   chg: +0.33,  label: 'CIPLA',         type: 'stock'  },
+  'DIVISLAB':   { price: 5420,   chg: +0.55,  label: "DIVI'S LAB",    type: 'stock'  },
+  'DRREDDY':    { price: 6850,   chg: +0.28,  label: "DR REDDY'S",    type: 'stock'  },
+  'APOLLOHOSP': { price: 6800,   chg: +1.10,  label: 'APOLLO HOSP',   type: 'stock'  },
+  'M&M':        { price: 2980,   chg: +1.44,  label: 'M&M',           type: 'stock'  },
+  'MM':         { price: 2980,   chg: +1.44,  label: 'M&M',           type: 'stock'  },
+  'SHREECEM':   { price: 25400,  chg: -0.33,  label: 'SHREE CEMENT',  type: 'stock'  },
+  'TATACONSUM': { price: 1050,   chg: +0.44,  label: 'TATA CONSUMER', type: 'stock'  },
+  'INDUSINDBK': { price: 1420,   chg: -0.88,  label: 'INDUSIND BANK', type: 'stock'  },
+  // ── Popular Mid/Small Caps ──
+  'ZOMATO':     { price: 220,    chg: +3.10,  label: 'ZOMATO',        type: 'stock'  },
+  'PAYTM':      { price: 480,    chg: +1.55,  label: 'PAYTM',         type: 'stock'  },
+  'NYKAA':      { price: 185,    chg: +2.20,  label: 'NYKAA',         type: 'stock'  },
+  'DELHIVERY':  { price: 390,    chg: +0.88,  label: 'DELHIVERY',     type: 'stock'  },
+  'POLICYBZR':  { price: 1580,   chg: +1.33,  label: 'POLICYBAZAAR',  type: 'stock'  },
+  'HDFCLIFE':   { price: 680,    chg: +0.44,  label: 'HDFC LIFE',     type: 'stock'  },
+  'SBILIFE':    { price: 1560,   chg: +0.33,  label: 'SBI LIFE',      type: 'stock'  },
+  'ICICIPRU':   { price: 680,    chg: +0.22,  label: 'ICICI PRU LIFE',type: 'stock'  },
+  'PIDILITIND': { price: 2980,   chg: -0.18,  label: 'PIDILITE',      type: 'stock'  },
+  'BERGEPAINT': { price: 560,    chg: -0.33,  label: 'BERGER PAINTS', type: 'stock'  },
+  'HAVELLS':    { price: 1680,   chg: +0.55,  label: 'HAVELLS',       type: 'stock'  },
+  'VOLTAS':     { price: 1450,   chg: +0.77,  label: 'VOLTAS',        type: 'stock'  },
+  'GODREJCP':   { price: 1120,   chg: -0.22,  label: 'GODREJ CP',     type: 'stock'  },
+  'MARICO':     { price: 620,    chg: +0.11,  label: 'MARICO',        type: 'stock'  },
+  'DABUR':      { price: 545,    chg: -0.15,  label: 'DABUR',         type: 'stock'  },
+  'COLPAL':     { price: 2880,   chg: +0.33,  label: 'COLGATE',       type: 'stock'  },
+  'JUBLFOOD':   { price: 650,    chg: +0.44,  label: "JUBILANT FOOD", type: 'stock'  },
+  'IRCTC':      { price: 860,    chg: +1.22,  label: 'IRCTC',         type: 'stock'  },
+  'HAL':        { price: 4250,   chg: +1.55,  label: 'HAL',           type: 'stock'  },
+  'BEL':        { price: 310,    chg: +0.88,  label: 'BEL',           type: 'stock'  },
+  'BHEL':       { price: 256,    chg: +1.10,  label: 'BHEL',          type: 'stock'  },
+  'NMDC':       { price: 235,    chg: +1.44,  label: 'NMDC',          type: 'stock'  },
+  'VEDL':       { price: 455,    chg: +2.10,  label: 'VEDANTA',       type: 'stock'  },
+  'SAIL':       { price: 134,    chg: +1.55,  label: 'SAIL',          type: 'stock'  },
+  'BANKBARODA': { price: 245,    chg: +0.82,  label: 'BANK OF BARODA',type: 'stock'  },
+  'PNB':        { price: 102,    chg: +1.10,  label: 'PNB',           type: 'stock'  },
+  'CANBK':      { price: 108,    chg: +0.93,  label: 'CANARA BANK',   type: 'stock'  },
+  'UNIONBANK':  { price: 156,    chg: +1.20,  label: 'UNION BANK',    type: 'stock'  },
+  'IDFCFIRSTB': { price: 78,     chg: +0.65,  label: 'IDFC FIRST BK', type: 'stock'  },
+  'BANDHANBNK': { price: 195,    chg: +0.44,  label: 'BANDHAN BANK',  type: 'stock'  },
+  'FEDERALBNK': { price: 185,    chg: +0.55,  label: 'FEDERAL BANK',  type: 'stock'  },
+  'RBLBANK':    { price: 220,    chg: -0.45,  label: 'RBL BANK',      type: 'stock'  },
+  'YESBANK':    { price: 22,     chg: +2.30,  label: 'YES BANK',      type: 'stock'  },
+  'LTF':        { price: 165,    chg: +0.61,  label: 'L&T FINANCE',   type: 'stock'  },
+  'MUTHOOTFIN': { price: 1980,   chg: +0.88,  label: 'MUTHOOT FIN',   type: 'stock'  },
+  'CHOLAFIN':   { price: 1250,   chg: +0.55,  label: 'CHOLAMANDALAM', type: 'stock'  },
+  'LICHSGFIN':  { price: 620,    chg: +0.33,  label: 'LIC HOUSING',   type: 'stock'  },
+  'RECLTD':     { price: 560,    chg: +1.10,  label: 'REC',           type: 'stock'  },
+  'PFC':        { price: 445,    chg: +0.88,  label: 'PFC',           type: 'stock'  },
+  'TORNTPOWER': { price: 1560,   chg: +0.44,  label: 'TORRENT POWER', type: 'stock'  },
+  'TATAPOWER':  { price: 420,    chg: +1.55,  label: 'TATA POWER',    type: 'stock'  },
+  'JSWENERGY':  { price: 680,    chg: +1.22,  label: 'JSW ENERGY',    type: 'stock'  },
+  'BOSCHLTD':   { price: 32500,  chg: +0.28,  label: 'BOSCH',         type: 'stock'  },
+  'CUMMINSIND': { price: 3450,   chg: +0.44,  label: 'CUMMINS INDIA', type: 'stock'  },
+  'SIEMENS':    { price: 7200,   chg: +0.33,  label: 'SIEMENS',       type: 'stock'  },
+  'ABB':        { price: 6800,   chg: +0.55,  label: 'ABB INDIA',     type: 'stock'  },
+  'CROMPTON':   { price: 380,    chg: +0.22,  label: 'CROMPTON',      type: 'stock'  },
+  'IPCALAB':    { price: 1680,   chg: +0.33,  label: 'IPCA LAB',      type: 'stock'  },
+  'AUROPHARMA': { price: 1280,   chg: +0.55,  label: 'AUROBINDO',     type: 'stock'  },
+  'LUPIN':      { price: 2050,   chg: +0.44,  label: 'LUPIN',         type: 'stock'  },
+  'TORNTPHARM': { price: 3200,   chg: +0.28,  label: 'TORRENT PHARMA',type: 'stock'  },
+  'ALKEM':      { price: 5800,   chg: +0.22,  label: 'ALKEM LAB',     type: 'stock'  },
+  'GLAND':      { price: 1850,   chg: -0.33,  label: 'GLAND PHARMA',  type: 'stock'  },
+  'DMART':      { price: 4200,   chg: -0.44,  label: 'D-MART (AVENU)',type: 'stock'  },
+  'TRENT':      { price: 5800,   chg: +1.22,  label: 'TRENT',         type: 'stock'  },
+  'VMART':      { price: 3200,   chg: +0.55,  label: 'V-MART RETAIL', type: 'stock'  },
+  'INDIGO':     { price: 4200,   chg: +0.88,  label: 'INDIGO (INTERGL)',type:'stock' },
+  'SPICEJET':   { price: 55,     chg: -1.80,  label: 'SPICEJET',      type: 'stock'  },
+  'GMRINFRA':   { price: 95,     chg: +1.05,  label: 'GMR INFRA',     type: 'stock'  },
+  'DLF':        { price: 880,    chg: +1.33,  label: 'DLF',           type: 'stock'  },
+  'GODREJPROP': { price: 2650,   chg: +0.88,  label: 'GODREJ PROP',   type: 'stock'  },
+  'OBEROIRLTY': { price: 1680,   chg: +1.10,  label: 'OBEROI REALTY', type: 'stock'  },
+  'PRESTIGE':   { price: 1850,   chg: +0.77,  label: 'PRESTIGE EST',  type: 'stock'  },
+  'PHOENIXLTD': { price: 3200,   chg: +0.44,  label: 'PHOENIX MILLS', type: 'stock'  },
+};
+
+// Alias: NIFTY → same as NIFTY50
+SYMBOL_MASTER['NIFTY'] = SYMBOL_MASTER['NIFTY50'];
+
+const DEFAULT_SYMBOLS = ['NIFTY','BANKNIFTY','SENSEX','INDIAVIX','MIDCPNIFTY','FINNIFTY','TATAMOTORS'];
+const PRESETS_LIST = ['RELIANCE','TCS','HDFCBANK','INFY','ICICIBANK','SBIN','BHARTIARTL','AXISBANK','KOTAKBANK','LT','WIPRO','TATASTEEL','ITC','ZOMATO','HAL'];
+const MAX_SYMBOLS = 8;
+
+let liveSymbols  = [];   // symbols shown in the top bar
+let modalSymbols = [];   // working copy inside edit modal
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PRICE STORE — keyed by NSE symbol string
+// { base, current, chgPct, source: 'live'|'demo' }
+// ─────────────────────────────────────────────────────────────────────────────
+const livePrices = {};
+
+function initSymbolPrice(sym) {
+  if (!SYMBOL_MASTER[sym]) {
+    SYMBOL_MASTER[sym] = {
+      price: 500 + Math.random() * 3000,
+      chg: +(Math.random() * 4 - 2).toFixed(2),
+      label: sym, type: 'stock'
+    };
+  }
+  if (!livePrices[sym]) {
+    var base = SYMBOL_MASTER[sym].price;
+    livePrices[sym] = { base: base, current: base, chgPct: SYMBOL_MASTER[sym].chg, source: 'demo' };
+  }
+}
+
+function initAllPrices() {
+  Object.keys(SYMBOL_MASTER).forEach(initSymbolPrice);
+}
+initAllPrices();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LIVE DATA API
+// ─────────────────────────────────────────────────────────────────────────────
+var LIVE_API_BASE = '/api';
+var TD_KEY = '';
+var tdRefreshTimer = null;
+var tdUsingLive = false;
+var backendConfigured = false;
+var backendManaged = false;
+var lastAcQuery = '';
+
+// Map our internal symbols → Twelve Data query symbols
+// Twelve Data uses  SYMBOL:NSE  for NSE stocks; indices need special codes
+var TD_SYMBOL_MAP = {
+  'NIFTY':       'NIFTY 50:NSE',
+  'NIFTY50':     'NIFTY 50:NSE',
+  'BANKNIFTY':   'NIFTY BANK:NSE',
+  'SENSEX':      'BSE SENSEX:BSE',
+  'INDIAVIX':    'INDIA VIX:NSE',
+  'MIDCPNIFTY':  'NIFTY MIDCAP 50:NSE',
+  'FINNIFTY':    'NIFTY FIN SERVICE:NSE',
+  'NIFTYNXT50':  'NIFTY NEXT 50:NSE',
+  'NIFTYNEXT50': 'NIFTY NEXT 50:NSE',
+  'NIFTYIT':     'NIFTY IT:NSE',
+  'NIFTYMETAL':  'NIFTY METAL:NSE',
+  'NIFTYPHARMA': 'NIFTY PHARMA:NSE',
+  'NIFTYAUTO':   'NIFTY AUTO:NSE',
+  'NIFTYFMCG':   'NIFTY FMCG:NSE',
+  'NIFTYREALTY': 'NIFTY REALTY:NSE',
+  'M&M':         'M&M:NSE',
+  'MM':          'M&M:NSE',
+  'LT':          'LT:NSE'
+};
+
+function tdSymbol(sym) {
+  // Use override map if present, otherwise append :NSE
+  return TD_SYMBOL_MAP[sym] || (sym + ':NSE');
+}
+
+async function loadApiKey() {
+  try {
+    var resp = await fetch(LIVE_API_BASE + '/config/status', { cache: 'no-store' });
+    if (!resp.ok) throw new Error('status');
+    var data = await resp.json();
+    backendConfigured = !!(data && data.configured);
+    backendManaged = !!(data && data.managed);
+    TD_KEY = backendConfigured ? 'configured-on-server' : '';
+  } catch(e) {
+    backendConfigured = false;
+    backendManaged = false;
+    TD_KEY = '';
+  }
+  syncApiUi();
+  return backendConfigured;
+}
+
+async function saveApiKey(key) {
+  var resp = await fetch(LIVE_API_BASE + '/config/key', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key: key.trim() })
+  });
+  var data = await resp.json().catch(function() { return {}; });
+  if (!resp.ok || !data.ok) {
+    throw new Error((data && data.error) || 'Unable to save API key.');
+  }
+  backendConfigured = true;
+  TD_KEY = 'configured-on-server';
+}
+
+async function clearApiKey() {
+  if (backendManaged) {
+    showApiMsg('info', 'Live data is managed by the site admin on the hosted backend.');
+    return;
+  }
+  try {
+    await fetch(LIVE_API_BASE + '/config/key', { method: 'DELETE' });
+  } catch(e) {}
+  TD_KEY = '';
+  backendConfigured = false;
+  document.getElementById('apiKeyInput').value = '';
+  stopLiveFeed();
+  setDataStatus('demo');
+  showApiMsg('info', 'API key removed from the local TradeEdge server. Using demo data.');
+}
+
+// ── Fetch prices for a list of symbols from the local TradeEdge server ──────
+async function fetchTDPrices(symbols) {
+  if (!backendConfigured || !symbols.length) return null;
+
+  try {
+    var resp = await fetch(LIVE_API_BASE + '/quotes?symbols=' + encodeURIComponent(symbols.join(',')), {
+      cache: 'no-store'
+    });
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch(e) {
+    return null;
+  }
+}
+
+// ── Parse backend quote response and update livePrices ───────────────────────
+function applyTDData(data, symbols) {
+  if (!data || !data.quotes) return false;
+  var updated = 0;
+
+  symbols.forEach(function(sym) {
+    var q = data.quotes[sym];
+    if (!q) return;
+
+    var price = parseFloat(q.price);
+    var prev  = parseFloat(q.previous_close || q.price || 0);
+    var chgPct = parseFloat(q.change_percent);
+    if (isNaN(price)) return;
+    if (isNaN(prev)) prev = price;
+    if (isNaN(chgPct)) chgPct = prev ? ((price - prev) / prev * 100) : 0;
+
+    if (!livePrices[sym]) initSymbolPrice(sym);
+    livePrices[sym].current = price;
+    livePrices[sym].base    = prev;
+    livePrices[sym].chgPct  = chgPct;
+    livePrices[sym].source  = 'live';
+
+    // Also update SYMBOL_MASTER so autocomplete shows correct price
+    if (SYMBOL_MASTER[sym]) {
+      SYMBOL_MASTER[sym].price = price;
+      SYMBOL_MASTER[sym].chg   = chgPct;
+    }
+    updated++;
+  });
+
+  return updated > 0;
+}
+
+// ── Main live fetch cycle ─────────────────────────────────────────────────────
+async function fetchLivePrices() {
+  if (!backendConfigured) return;
+
+  // Fetch symbols currently shown in the bar
+  var syms = liveSymbols.slice();
+  if (!syms.length) return;
+
+  setDataStatus('loading');
+
+  var data = await fetchTDPrices(syms);
+  if (!data) {
+    setDataStatus(tdUsingLive ? 'delayed' : 'demo');
+    return;
+  }
+
+  if (data.configured === false) {
+    backendConfigured = false;
+    TD_KEY = '';
+    setDataStatus('demo');
+    return;
+  }
+
+  if (data.ok === false && data.error) {
+    if ((data.error || '').toLowerCase().indexOf('api key') !== -1 || (data.error || '').toLowerCase().indexOf('invalid') !== -1) {
+      backendConfigured = false;
+      TD_KEY = '';
+      setDataStatus('demo');
+      return;
+    }
+    setDataStatus('delayed');
+    return;
+  }
+
+  var ok = applyTDData(data, syms);
+  if (ok) {
+    tdUsingLive = true;
+    setDataStatus('live');
+    updateBarText(); // immediately push new numbers to DOM
+    document.getElementById('apiBanner').classList.remove('show');
+  } else {
+    setDataStatus('delayed');
+  }
+}
+
+// ── Update just the text in bar chips (no rebuild, no animation reset) ────────
+function updateBarText() {
+  var track = document.getElementById('indicesTrack');
+  if (!track) return;
+  var chips = track.querySelectorAll('.idx-chip');
+  var n = liveSymbols.length;
+  liveSymbols.forEach(function(sym, i) {
+    var lp = livePrices[sym];
+    if (!lp) return;
+    var pStr = '\u20b9' + formatPrice(sym, lp.current);
+    var cStr = formatChg(sym, lp.chgPct);
+    var cls  = lp.chgPct > 0 ? 'up' : lp.chgPct < 0 ? 'dn' : 'neu';
+    [chips[i], chips[i + n]].forEach(function(c) {
+      if (!c) return;
+      var pEl = c.querySelector('.idx-price');
+      var cEl = c.querySelector('.idx-chg');
+      if (pEl) pEl.textContent = pStr;
+      if (cEl) { cEl.textContent = cStr; cEl.className = 'idx-chg ' + cls; }
+    });
+  });
+}
+
+// ── Demo mode: gentle price jitter so the bar looks alive ────────────────────
+function jitterPrices() {
+  Object.keys(livePrices).forEach(function(sym) {
+    var p = livePrices[sym];
+    if (p.source === 'live') return; // don't jitter real data
+    var vol = p.base * 0.0006;
+    var move = (Math.random() - 0.49) * vol;
+    p.current = Math.max(p.base * 0.97, Math.min(p.base * 1.03, p.current + move));
+    p.chgPct  = ((p.current - p.base) / p.base) * 100;
+  });
+}
+
+// ── Start/stop live feed ──────────────────────────────────────────────────────
+function startLiveFeed() {
+  if (tdRefreshTimer) clearInterval(tdRefreshTimer);
+  fetchLivePrices(); // immediate first fetch
+  tdRefreshTimer = setInterval(fetchLivePrices, 15000); // refresh every 15s
+}
+
+function stopLiveFeed() {
+  if (tdRefreshTimer) { clearInterval(tdRefreshTimer); tdRefreshTimer = null; }
+  tdUsingLive = false;
+  // reset all prices back to demo
+  Object.keys(livePrices).forEach(function(sym) {
+    livePrices[sym].source = 'demo';
+    if (SYMBOL_MASTER[sym]) {
+      livePrices[sym].current = SYMBOL_MASTER[sym].price;
+      livePrices[sym].base    = SYMBOL_MASTER[sym].price;
+      livePrices[sym].chgPct  = SYMBOL_MASTER[sym].chg;
+    }
+  });
+  renderIndicesBar();
+}
+
+// ── Data status pill ──────────────────────────────────────────────────────────
+function setDataStatus(state) {
+  var pill = document.getElementById('dataStatusPill');
+  var txt  = document.getElementById('dataStatusText');
+  if (!pill || !txt) return;
+  pill.className = 'data-status-pill ' + (state === 'live' ? 'live' : state === 'loading' ? 'delayed' : state === 'delayed' ? 'delayed' : 'demo');
+  txt.textContent = state === 'live' ? 'LIVE NSE' : state === 'loading' ? 'FETCHING' : state === 'delayed' ? 'DELAYED' : 'DEMO';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FORMATTING
+// ─────────────────────────────────────────────────────────────────────────────
+function formatPrice(sym, val) {
+  if (!val && val !== 0) return '—';
+  if (sym === 'INDIAVIX') return val.toFixed(2);
+  if (val >= 10000) return val.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  if (val >= 1000)  return val.toLocaleString('en-IN', { maximumFractionDigits: 1 });
+  return val.toFixed(2);
+}
+
+function formatChg(sym, val) {
+  if (val === undefined || val === null || isNaN(val)) return '—';
+  var sign = val >= 0 ? '+' : '';
+  return sign + val.toFixed(2) + '%';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BAR RENDERING
+// ─────────────────────────────────────────────────────────────────────────────
+function buildChips() {
+  var syms = liveSymbols.concat(liveSymbols); // double for seamless CSS loop
+  return syms.map(function(sym) {
+    var m  = SYMBOL_MASTER[sym] || { price: 100, chg: 0, label: sym };
+    var lp = livePrices[sym] || { current: m.price, chgPct: m.chg };
+    var cls = lp.chgPct > 0 ? 'up' : lp.chgPct < 0 ? 'dn' : 'neu';
+    return '<div class="idx-chip">' +
+      '<span class="idx-sym">' + m.label + '</span>' +
+      '<span class="idx-price">\u20b9' + formatPrice(sym, lp.current) + '</span>' +
+      '<span class="idx-chg ' + cls + '">' + formatChg(sym, lp.chgPct) + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+function renderIndicesBar() {
+  var track = document.getElementById('indicesTrack');
+  if (!track) return;
+  track.innerHTML = buildChips();
+  track.style.animation = 'none';
+  track.getBoundingClientRect();
+  track.style.animation = '';
+}
+
+// ── Demo tick: jitter + push to DOM every 2s ─────────────────────────────────
+function startScroll() {
+  setInterval(function() {
+    if (!tdUsingLive) {
+      jitterPrices();
+      updateBarText();
+    }
+  }, 2000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+function loadSymbols() {
+  try {
+    var saved = localStorage.getItem('te_idx_symbols');
+    liveSymbols = saved ? JSON.parse(saved).slice(0, MAX_SYMBOLS) : DEFAULT_SYMBOLS.slice();
+  } catch(e) { liveSymbols = DEFAULT_SYMBOLS.slice(); }
+}
+
+async function initIndicesBar() {
+  await loadApiKey();
+  loadSymbols();
+  renderIndicesBar();
+  startScroll();
+
+  if (backendConfigured) {
+    startLiveFeed();
+  } else {
+    // Show the banner after a short delay so it doesn't flash during login
+    setTimeout(function() {
+      // Only show banner if user is already logged in
+      var session = localStorage.getItem('te_session');
+      if (session) {
+        try {
+          var s = JSON.parse(session);
+          if (s.loggedIn) document.getElementById('apiBanner').classList.add('show');
+        } catch(e) {}
+      }
+    }, 2500);
+    setDataStatus('demo');
+  }
+}
+initIndicesBar();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API KEY MODAL LOGIC
+// ─────────────────────────────────────────────────────────────────────────────
+function openApiModal() {
+  if (backendManaged) {
+    document.getElementById('apiKeyInput').value = '';
+    showApiMsg('info', 'Live data is managed by the site admin on the hosted backend. Visitors do not need to paste an API key.');
+    document.getElementById('apiModalOverlay').classList.add('open');
+    return;
+  }
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiStatusMsg').classList.remove('show');
+  document.getElementById('apiModalOverlay').classList.add('open');
+}
+
+function closeApiModal() {
+  document.getElementById('apiModalOverlay').classList.remove('open');
+}
+
+function toggleApiKeyVis() {
+  var inp = document.getElementById('apiKeyInput');
+  var tog = document.getElementById('apiKeyToggle');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    tog.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    tog.textContent = '👁';
+  }
+}
+
+function showApiMsg(type, text) {
+  var el = document.getElementById('apiStatusMsg');
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'api-status-msg show ' + type;
+}
+
+function syncApiUi() {
+  var bannerBtn = document.getElementById('apiBannerBtn');
+  var note = document.getElementById('apiNote');
+  var validateBtn = document.getElementById('apiValidateBtn');
+  var clearBtn = document.querySelector('.api-clear-btn');
+  var input = document.getElementById('apiKeyInput');
+
+  if (bannerBtn) {
+    bannerBtn.textContent = backendManaged ? 'Live Data Managed' : 'Connect API →';
+  }
+
+  if (note) {
+    note.innerHTML = backendManaged
+      ? '🔒 Live data is managed on the hosted TradeEdge backend for all visitors. &nbsp;|&nbsp; No user-side API key is required. &nbsp;|&nbsp; Quotes refresh every 15 seconds.'
+      : '🔒 Your API key is stored by the local TradeEdge server on this machine, not in the page itself. &nbsp;|&nbsp; Data is refreshed every 15 seconds. &nbsp;|&nbsp; Open the site through <code>http://localhost:8080/</code> so the live-data API is available.';
+  }
+
+  if (validateBtn) {
+    validateBtn.disabled = !!backendManaged;
+    validateBtn.style.opacity = backendManaged ? '0.6' : '';
+    validateBtn.style.cursor = backendManaged ? 'not-allowed' : '';
+  }
+
+  if (clearBtn) {
+    clearBtn.disabled = !!backendManaged;
+    clearBtn.style.opacity = backendManaged ? '0.5' : '';
+    clearBtn.style.cursor = backendManaged ? 'not-allowed' : '';
+  }
+
+  if (input) {
+    input.disabled = !!backendManaged;
+    input.placeholder = backendManaged ? 'Live data is managed by the hosted backend' : 'Paste your Twelve Data API key here…';
+  }
+}
+
+async function validateAndSaveKey() {
+  if (backendManaged) {
+    showApiMsg('info', 'Live data is managed by the site admin on the hosted backend.');
+    return;
+  }
+  var inp = document.getElementById('apiKeyInput');
+  var key = inp.value.trim();
+
+  if (!key) {
+    showApiMsg('err', '⚠ Please paste your actual API key from Twelve Data.');
+    return;
+  }
+  if (key.length < 10) {
+    showApiMsg('err', '⚠ That doesn\'t look like a valid API key. Twelve Data keys are 20+ characters.');
+    return;
+  }
+
+  var btn = document.getElementById('apiValidateBtn');
+  btn.disabled = true;
+  btn.textContent = 'VALIDATING...';
+  showApiMsg('info', '⏳ Validating your key with the local TradeEdge live-data server...');
+
+  try {
+    await saveApiKey(key);
+    showApiMsg('ok', '✓ API key validated and saved on the local TradeEdge server. Fetching live NSE data now...');
+    btn.textContent = 'SAVED ✓';
+    document.getElementById('apiBanner').classList.remove('show');
+    setTimeout(function() {
+      closeApiModal();
+      startLiveFeed();
+      btn.disabled = false;
+      btn.textContent = 'VALIDATE & SAVE →';
+    }, 1200);
+  } catch(e) {
+    showApiMsg('err', '✕ ' + (e && e.message ? e.message : 'Unable to validate the API key.'));
+    btn.disabled = false;
+    btn.textContent = 'VALIDATE & SAVE →';
+  }
+}
+
+// ── MODAL ──
+function openIdxModal() {
+  modalSymbols = [...liveSymbols];
+  renderModalList();
+  renderPresets();
+  document.getElementById('idxModalOverlay').classList.add('open');
+}
+
+function closeIdxModal() {
+  document.getElementById('idxModalOverlay').classList.remove('open');
+}
+
+function closeIdxModalOutside(e) {
+  if (e.target === document.getElementById('idxModalOverlay')) closeIdxModal();
+}
+
+function renderModalList() {
+  const list = document.getElementById('idxSymbolList');
+  const count = document.getElementById('symbolCount');
+  count.textContent = modalSymbols.length + '/' + MAX_SYMBOLS;
+
+  list.innerHTML = modalSymbols.map((sym, i) => {
+    const m = SYMBOL_MASTER[sym] || { label: sym };
+    return `<div class="idx-symbol-row" id="srow-${i}">
+      <span class="idx-drag-handle" title="Drag to reorder">⠿</span>
+      <span class="idx-sym-input" style="font-family:var(--mono);font-size:13px;letter-spacing:0.08em;color:var(--text)">${sym}</span>
+      <span class="idx-sym-badge">${m.label}</span>
+      <button class="idx-remove-btn" onclick="removeIdxSymbol(${i})" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+
+  updateAddBtnState();
+  updateLimitNote();
+}
+
+// ── AUTOCOMPLETE ENGINE ──
+let acActiveIdx = -1;
+let acHideTimer = null;
+
+function buildAcList(query) {
+  if (!query || query.length < 1) return [];
+  const q = query.toUpperCase();
+  const allSyms = Object.keys(SYMBOL_MASTER);
+  // deduplicate display (NIFTY and NIFTY50 point to same data)
+  const seen = new Set();
+  const results = [];
+  for (const sym of allSyms) {
+    if (seen.has(SYMBOL_MASTER[sym].label)) continue;
+    if (sym.startsWith(q) || SYMBOL_MASTER[sym].label.toUpperCase().includes(q)) {
+      seen.add(SYMBOL_MASTER[sym].label);
+      results.push(sym);
+    }
+  }
+  // sort: starts-with first, then contains
+  results.sort((a, b) => {
+    const aStarts = a.startsWith(q) ? 0 : 1;
+    const bStarts = b.startsWith(q) ? 0 : 1;
+    return aStarts - bStarts || a.localeCompare(b);
+  });
+  return results.slice(0, 12);
+}
+
+function renderAcList(results, query) {
+  const list = document.getElementById('idxAcList');
+  if (!results.length) { list.classList.remove('open'); return; }
+  const q = query.toUpperCase();
+  lastAcQuery = q;
+  list.innerHTML = results.map((sym, i) => {
+    const m = SYMBOL_MASTER[sym];
+    const lp = livePrices[sym];
+    var qEsc = q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const highlighted = sym.replace(new RegExp('(' + qEsc + ')','i'), '<mark>$1</mark>');
+    const already = modalSymbols.includes(sym) ? ' style="opacity:0.4;cursor:default"' : '';
+    const typeClass = (m.type === 'index') ? 'index' : 'stock';
+    const livePrice = lp && typeof lp.current === 'number' ? lp.current : m.price;
+    const priceStr = formatPrice(sym, livePrice);
+    return '<div class="idx-ac-item' + (i === acActiveIdx ? ' active' : '') + '" data-sym="' + sym + '"' + already + '>' +
+      '<span class="idx-ac-sym">' + highlighted + '</span>' +
+      '<span class="idx-ac-label">' + m.label + '</span>' +
+      '<span class="idx-ac-type ' + typeClass + '">' + (m.type || 'stock') + '</span>' +
+      '<span class="idx-ac-price">&#8377;' + priceStr + '</span>' +
+      '</div>';
+  }).join('');
+  list.querySelectorAll('.idx-ac-item').forEach(function(el) {
+    el.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      const sym = el.getAttribute('data-sym');
+      if (!modalSymbols.includes(sym)) {
+        selectAcSymbol(sym);
+      }
+    });
+  });
+  list.classList.add('open');
+  acActiveIdx = -1;
+}
+
+async function refreshAutocompleteQuotes(results, query) {
+  if (!backendConfigured || !results.length) return;
+
+  var payload = await fetchTDPrices(results.slice(0, 12));
+  if (!payload || payload.ok === false) return;
+
+  if (applyTDData(payload, results)) {
+    var currentQuery = document.getElementById('idxAddInput').value.trim().toUpperCase();
+    if (currentQuery === query.toUpperCase()) {
+      renderAcList(results, query);
+    }
+  }
+}
+
+function onIdxSearchInput(el) {
+  el.value = el.value.toUpperCase();
+  acActiveIdx = -1;
+  const q = el.value.trim();
+  if (!q) { document.getElementById('idxAcList').classList.remove('open'); return; }
+  const results = buildAcList(q);
+  renderAcList(results, q);
+  refreshAutocompleteQuotes(results, q);
+  document.getElementById('idxLimitNote').textContent = '';
+}
+
+function onIdxSearchKey(e) {
+  const list = document.getElementById('idxAcList');
+  const items = list.querySelectorAll('.idx-ac-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acActiveIdx = Math.min(acActiveIdx + 1, items.length - 1);
+    items.forEach(function(el, i) { el.classList.toggle('active', i === acActiveIdx); });
+    if (items[acActiveIdx]) items[acActiveIdx].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acActiveIdx = Math.max(acActiveIdx - 1, 0);
+    items.forEach(function(el, i) { el.classList.toggle('active', i === acActiveIdx); });
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (acActiveIdx >= 0 && items[acActiveIdx]) {
+      const sym = items[acActiveIdx].getAttribute('data-sym');
+      if (sym && !modalSymbols.includes(sym)) selectAcSymbol(sym);
+    } else {
+      addIdxSymbol();
+    }
+  } else if (e.key === 'Escape') {
+    document.getElementById('idxAcList').classList.remove('open');
+  }
+}
+
+function selectAcSymbol(sym) {
+  document.getElementById('idxAddInput').value = sym;
+  document.getElementById('idxAcList').classList.remove('open');
+  addIdxSymbolByKey(sym);
+}
+
+function showAcList() {
+  if (acHideTimer) clearTimeout(acHideTimer);
+  const q = document.getElementById('idxAddInput').value.trim();
+  if (q) {
+    const results = buildAcList(q);
+    renderAcList(results, q);
+    refreshAutocompleteQuotes(results, q);
+  }
+}
+
+function hideAcListDelayed() {
+  acHideTimer = setTimeout(function() {
+    var el = document.getElementById('idxAcList');
+    if (el) el.classList.remove('open');
+    acActiveIdx = -1;
+  }, 200);
+}
+
+function renderPresets() {
+  const wrap = document.getElementById('idxPresets');
+  wrap.innerHTML = PRESETS_LIST.map(sym => {
+    const already = modalSymbols.includes(sym);
+    const label = (SYMBOL_MASTER[sym] && SYMBOL_MASTER[sym].label) ? SYMBOL_MASTER[sym].label : sym;
+    const cls = already ? 'idx-preset-chip added' : 'idx-preset-chip';
+    const text = sym + (already ? ' ✓' : ' +');
+    return '<div class="' + cls + '" data-sym="' + sym + '" title="' + label + '">' + text + '</div>';
+  }).join('');
+  wrap.querySelectorAll('.idx-preset-chip:not(.added)').forEach(function(el) {
+    el.addEventListener('click', function() { addPreset(el.getAttribute('data-sym')); });
+  });
+}
+
+function addPreset(sym) {
+  if (modalSymbols.length >= MAX_SYMBOLS) {
+    document.getElementById('idxLimitNote').style.color = 'var(--red)';
+    document.getElementById('idxLimitNote').textContent = '⚠ Maximum ' + MAX_SYMBOLS + ' symbols. Remove one first.';
+    return;
+  }
+  if (!modalSymbols.includes(sym)) {
+    if (!livePrices[sym]) initSymbolPrice(sym);
+    modalSymbols.push(sym);
+    renderModalList();
+    renderPresets();
+  }
+}
+
+function addIdxSymbol() {
+  const input = document.getElementById('idxAddInput');
+  const raw   = input.value.trim().toUpperCase().replace(/[^A-Z0-9&]/g, '');
+  addIdxSymbolByKey(raw);
+}
+
+function addIdxSymbolByKey(raw) {
+  const input = document.getElementById('idxAddInput');
+  const err   = document.getElementById('idxLimitNote');
+
+  if (!raw) { return; }
+
+  if (modalSymbols.length >= MAX_SYMBOLS) {
+    err.style.color = 'var(--red)';
+    err.textContent = '⚠ Maximum ' + MAX_SYMBOLS + ' symbols allowed. Remove one first.';
+    return;
+  }
+  if (modalSymbols.includes(raw)) {
+    err.style.color = 'var(--red)';
+    err.textContent = '⚠ ' + raw + ' is already in your list.';
+    input.value = '';
+    document.getElementById('idxAcList').classList.remove('open');
+    return;
+  }
+  if (raw.length < 1 || raw.length > 20) {
+    err.style.color = 'var(--red)';
+    err.textContent = '⚠ Symbol must be 1–20 characters.';
+    return;
+  }
+
+  initSymbolPrice(raw);
+  modalSymbols.push(raw);
+  input.value = '';
+  err.textContent = '';
+  document.getElementById('idxAcList').classList.remove('open');
+  renderModalList();
+  renderPresets();
+}
+
+function removeIdxSymbol(idx) {
+  if (modalSymbols.length <= 1) {
+    document.getElementById('idxLimitNote').style.color = 'var(--red)';
+    document.getElementById('idxLimitNote').textContent = '⚠ You need at least 1 symbol.';
+    return;
+  }
+  modalSymbols.splice(idx, 1);
+  document.getElementById('idxLimitNote').textContent = '';
+  renderModalList();
+  renderPresets();
+}
+
+function updateAddBtnState() {
+  document.getElementById('idxAddBtn').disabled = modalSymbols.length >= MAX_SYMBOLS;
+}
+
+function updateLimitNote() {
+  const note = document.getElementById('idxLimitNote');
+  if (modalSymbols.length >= MAX_SYMBOLS) {
+    note.style.color = 'var(--warn)';
+    note.textContent = 'Maximum symbols reached (' + MAX_SYMBOLS + '). Remove a symbol to add a new one.';
+  } else {
+    const rem = MAX_SYMBOLS - modalSymbols.length;
+    note.style.color = 'var(--muted)';
+    note.textContent = rem + ' slot' + (rem !== 1 ? 's' : '') + ' remaining.';
+  }
+}
+
+function saveIdxSymbols() {
+  if (modalSymbols.length === 0) return;
+  liveSymbols = modalSymbols.slice();
+  try { localStorage.setItem('te_idx_symbols', JSON.stringify(liveSymbols)); } catch(e) {}
+  renderIndicesBar();
+  closeIdxModal();
+  // If live feed is active, fetch the new symbols immediately
+  if (backendConfigured) {
+    fetchLivePrices();
+  }
+  // brief highlight flash on bar
+  var bar = document.getElementById('indicesBar');
+  bar.style.background = 'rgba(0,212,255,0.08)';
+  setTimeout(function() { bar.style.background = ''; }, 400);
+}
+
+function resetIdxSymbols() {
+  modalSymbols = [...DEFAULT_SYMBOLS];
+  document.getElementById('idxLimitNote').textContent = '';
+  renderModalList();
+  renderPresets();
+}
+
+// ============= MARKET STATUS =============
+function updateMarketStatus() {
+  const now = new Date();
+  const IST = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const h = IST.getHours(), m = IST.getMinutes();
+  const isWeekday = IST.getDay() >= 1 && IST.getDay() <= 5;
+  const isOpen = isWeekday && (h > 9 || (h === 9 && m >= 15)) && (h < 15 || (h === 15 && m <= 30));
+  const badge = document.getElementById('marketStatus');
+  badge.textContent = isOpen ? 'MARKET OPEN' : 'MARKET CLOSED';
+  badge.style.color = isOpen ? 'var(--accent2)' : 'var(--muted)';
+  badge.style.borderColor = isOpen ? 'rgba(0,255,136,0.3)' : 'var(--border)';
+  badge.style.background = isOpen ? 'rgba(0,255,136,0.08)' : 'rgba(0,212,255,0.08)';
+}
+updateMarketStatus();
+
+// ============= TABS =============
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ============= LOGIN LOGIC =============
+var VALID_OTPS = ['123456', '098765'];
+var _phone = '';
+var _attempts = 0;
+var _resendTimer = null;
+
+// Check if already logged in
+(function() {
+  try {
+    var s = JSON.parse(localStorage.getItem('te_session') || '{}');
+    if (s.loggedIn) {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.body.classList.remove('login-active');
+      return;
+    }
+  } catch(e) {}
+  // Not logged in
+  document.body.classList.add('login-active');
+})();
+
+
+function logoutUser() {
+  localStorage.removeItem('te_session');
+  localStorage.removeItem('te_pending_phone');
+  location.reload();
+}
+
+function skipLogin() {
+  localStorage.setItem('te_session', JSON.stringify({ phone: 'demo', loggedIn: true, ts: Date.now() }));
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.body.classList.remove('login-active');
+}
+function handlePhoneInput(el) {
+  // strip non-digits
+  var v = el.value.replace(/[^0-9]/g, '').substring(0, 10);
+  el.value = v;
+  var btn = document.getElementById('sendOtpBtn');
+  var err = document.getElementById('phoneError');
+  err.className = 'l-error';
+  btn.disabled = (v.length !== 10);
+}
+
+function clickSendOTP() {
+  var phone = document.getElementById('phoneInput').value.replace(/[^0-9]/g, '');
+  var err   = document.getElementById('phoneError');
+
+  if (phone.length !== 10) {
+    err.textContent = 'Please enter a 10-digit mobile number.';
+    err.className = 'l-error show'; return;
+  }
+  if (!/^[6-9]/.test(phone)) {
+    err.textContent = 'Indian numbers must start with 6, 7, 8 or 9.';
+    err.className = 'l-error show'; return;
+  }
+
+  _phone = phone;
+  _attempts = 0;
+
+  // Show OTP step
+  document.getElementById('stepPhone').className = 'login-step';
+  document.getElementById('stepOtp').className = 'login-step active';
+  document.getElementById('otpSubText').innerHTML = 'OTP sent to <strong>+91 ' + phone.substring(0,5) + 'XXXXX</strong>';
+
+  // Clear OTP boxes
+  for (var i = 0; i < 6; i++) {
+    var b = document.getElementById('otp' + i);
+    b.value = ''; b.className = 'otp-box';
+  }
+  document.getElementById('otpError').className = 'l-error';
+  document.getElementById('otpSuccess').className = 'l-success-msg';
+  document.getElementById('verifyOtpBtn').disabled = true;
+
+  startResend();
+  setTimeout(function() { document.getElementById('otp0').focus(); }, 80);
+}
+
+function clickGoBack() {
+  document.getElementById('stepOtp').className = 'login-step';
+  document.getElementById('stepPhone').className = 'login-step active';
+  stopResend();
+}
+
+function getOTP() {
+  var s = '';
+  for (var i = 0; i < 6; i++) s += (document.getElementById('otp' + i).value || '');
+  return s;
+}
+
+function handleOtpInput(el, idx) {
+  el.value = el.value.replace(/[^0-9]/g, '').slice(-1);
+  el.classList.toggle('filled', el.value !== '');
+  el.classList.remove('error-box');
+  document.getElementById('otpError').className = 'l-error';
+  if (el.value && idx < 5) document.getElementById('otp' + (idx + 1)).focus();
+  document.getElementById('verifyOtpBtn').disabled = (getOTP().length < 6);
+}
+
+function handleOtpKey(e, idx) {
+  if (e.key === 'Backspace') {
+    var el = document.getElementById('otp' + idx);
+    if (!el.value && idx > 0) {
+      var prev = document.getElementById('otp' + (idx - 1));
+      prev.value = ''; prev.classList.remove('filled'); prev.focus();
+    }
+  }
+  if (e.key === 'Enter' && getOTP().length === 6) clickVerifyOTP();
+}
+
+function handleOtpPaste(e) {
+  e.preventDefault();
+  var text = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').substring(0, 6);
+  for (var i = 0; i < 6; i++) {
+    var b = document.getElementById('otp' + i);
+    b.value = text[i] || '';
+    b.classList.toggle('filled', !!b.value);
+  }
+  document.getElementById('verifyOtpBtn').disabled = (text.length < 6);
+  if (text.length === 6) document.getElementById('otp5').focus();
+}
+
+function clickVerifyOTP() {
+  var otp  = getOTP();
+  var errEl = document.getElementById('otpError');
+  var okEl  = document.getElementById('otpSuccess');
+
+  if (otp.length < 6) {
+    errEl.textContent = 'Please enter all 6 digits.';
+    errEl.className = 'l-error show'; return;
+  }
+
+  if (VALID_OTPS.indexOf(otp) === -1) {
+    _attempts++;
+    for (var i = 0; i < 6; i++) document.getElementById('otp' + i).classList.add('error-box');
+
+    if (_attempts >= 3) {
+      errEl.textContent = 'Too many wrong attempts. Please request a new OTP.';
+      errEl.className = 'l-error show';
+      document.getElementById('verifyOtpBtn').disabled = true;
+      return;
+    }
+    var left = 3 - _attempts;
+    errEl.textContent = 'Wrong OTP. ' + left + ' attempt' + (left === 1 ? '' : 's') + ' left.';
+    errEl.className = 'l-error show';
+    okEl.className = 'l-success-msg';
+    return;
+  }
+
+  // ── SUCCESS ──
+  errEl.className = 'l-error';
+  for (var j = 0; j < 6; j++) document.getElementById('otp' + j).classList.add('success-box');
+  okEl.textContent = '✓ Verified! Logging you in...';
+  okEl.className = 'l-success-msg show';
+  document.getElementById('verifyOtpBtn').disabled = true;
+  stopResend();
+
+  localStorage.setItem('te_session', JSON.stringify({ phone: _phone, loggedIn: true, ts: Date.now() }));
+
+  setTimeout(doSuccessFlash, 500);
+}
+
+function doSuccessFlash() {
+  var flash = document.createElement('div');
+  flash.className = 'login-success-flash';
+  flash.innerHTML =
+    '<div class="success-ring">&#10003;</div>' +
+    '<div class="success-text">VERIFIED</div>' +
+    '<div class="success-sub">Welcome to TradeEdge</div>';
+  document.body.appendChild(flash);
+
+  setTimeout(function() {
+    // Hide login overlay
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.body.classList.remove('login-active');
+    // Remove flash
+    flash.style.transition = 'opacity 0.4s';
+    flash.style.opacity = '0';
+    setTimeout(function() {
+      flash.remove();
+      // Show API banner after login if no key
+      if (!backendConfigured) {
+        setTimeout(function() {
+          var b = document.getElementById('apiBanner');
+          if (b) b.classList.add('show');
+        }, 600);
+      }
+    }, 400);
+  }, 1400);
+}
+
+function clickResendOTP() {
+  _attempts = 0;
+  for (var i = 0; i < 6; i++) {
+    var b = document.getElementById('otp' + i);
+    b.value = ''; b.className = 'otp-box';
+  }
+  document.getElementById('otpError').className = 'l-error';
+  var ok = document.getElementById('otpSuccess');
+  ok.textContent = '✓ New OTP sent.';
+  ok.className = 'l-success-msg show';
+  setTimeout(function() { ok.className = 'l-success-msg'; }, 2500);
+  document.getElementById('verifyOtpBtn').disabled = true;
+  startResend();
+  setTimeout(function() { document.getElementById('otp0').focus(); }, 80);
+}
+
+function startResend() {
+  stopResend();
+  var secs = 30;
+  var btn = document.getElementById('resendBtn');
+  var countEl = document.getElementById('timerCount');
+  var timerEl = document.getElementById('resendTimer');
+  btn.disabled = true;
+  timerEl.style.display = 'inline';
+  countEl.textContent = secs;
+  _resendTimer = setInterval(function() {
+    secs--;
+    countEl.textContent = secs;
+    if (secs <= 0) {
+      stopResend();
+      btn.disabled = false;
+      timerEl.style.display = 'none';
+    }
+  }, 1000);
+}
+
+function stopResend() {
+  if (_resendTimer) { clearInterval(_resendTimer); _resendTimer = null; }
+}
+// ============= END LOGIN =============
+
+
+// ============= HELP & RESOURCES =============
+function toggleFaq(qEl) {
+  var item = qEl.parentElement;
+  var isOpen = item.classList.contains('open');
+  // close all
+  document.querySelectorAll('.faq-item.open').forEach(function(el) {
+    el.classList.remove('open');
+  });
+  // open clicked if it was closed
+  if (!isOpen) item.classList.add('open');
+}
+
+function openVideoModal(title, desc, icon, duration, tag) {
+  document.getElementById('videoModalTitle').textContent = title;
+  document.getElementById('videoModalDesc').textContent = desc;
+  document.getElementById('videoModalIcon').textContent = icon;
+  document.getElementById('videoModalOverlay').classList.add('open');
+}
+
+function closeVideoModal() {
+  document.getElementById('videoModalOverlay').classList.remove('open');
+}
+
+function closeVideoModalOutside(event) {
+  if (event.target && event.target.id === 'videoModalOverlay') {
+    closeVideoModal();
+  }
+}
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeVideoModal();
+  }
+});
+</script>
+</body>
+</html>
+
+
