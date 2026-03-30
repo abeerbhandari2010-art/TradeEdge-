@@ -2742,12 +2742,12 @@ initAllPrices();
 // ─────────────────────────────────────────────────────────────────────────────
 // LIVE DATA API
 // ─────────────────────────────────────────────────────────────────────────────
-var LIVE_API_BASE = '/api';
+var LIVE_API_BASE = 'https://tradeedge-backend-lkve.onrender.com/api';
 var TD_KEY = '';
 var tdRefreshTimer = null;
 var tdUsingLive = false;
-var backendConfigured = false;
-var backendManaged = false;
+var backendConfigured = true;
+var backendManaged = true;
 var lastAcQuery = '';
 
 // Map our internal symbols → Twelve Data query symbols
